@@ -1,0 +1,9 @@
+START TRANSACTION;
+
+DROP TABLE IF EXISTS "public"."organizations" CASCADE;
+
+DROP TABLE IF EXISTS "public"."users" CASCADE;
+
+DROP TABLE IF EXISTS "public"."projects" CASCADE;
+
+COMMIT;

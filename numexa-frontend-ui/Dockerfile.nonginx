@@ -1,0 +1,8 @@
+FROM node:20-alpine3.17
+COPY . .
+RUN yarn install
+RUN yarn build
+RUN npm install -g serve
+
+EXPOSE 3000
+CMD ["serve","-s","-p","3000","build/"]

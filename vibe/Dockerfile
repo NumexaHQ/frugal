@@ -1,0 +1,35 @@
+#  build golang code
+FROM golang:1.20.6-alpine3.18 AS builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy go mod and sum files
+COPY . .
+
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN cd vibe && \
+    go mod download && \
+    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o nxa-vibe .
+
+# Build the Go app
+# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o nxa-auth .
+
+# Path: Dockerfile
+#  build final image
+FROM alpine:3.18
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/vibe/nxa-vibe /usr/local/bin/nxa-vibe
+COPY ./vibe/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose port 8081 to the outside world
+EXPOSE 8082
+
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "nxa-vibe" ]
+
