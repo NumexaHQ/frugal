@@ -18,7 +18,6 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-
 import ColumnsTable from "views/admin/dataTables/components/general-table";
 
 import { apiKeycolumn } from "views/admin/dataTables/variables/columnsData";
@@ -27,10 +26,7 @@ import { MdContentCopy } from "react-icons/md";
 import { connect } from "react-redux";
 
 const ApiKeys = ({ apiKeys, handleListApiKeys, projectId, code, genKey }) => {
-  const [codeContent, setCodeContent] = useState(
-    "invaid api key, please generate a new one"
-  );
-  const { hasCopied, onCopy } = useClipboard(codeContent);
+  const { hasCopied, onCopy } = useClipboard(code);
   const [keyName, setKeyName] = useState("");
 
   const {
@@ -46,7 +42,6 @@ const ApiKeys = ({ apiKeys, handleListApiKeys, projectId, code, genKey }) => {
   const genKeyClickEvent = () => {
     onOpenMain();
     genKey({ projectId, keyName });
-    setCodeContent(code);
   };
 
   return (
