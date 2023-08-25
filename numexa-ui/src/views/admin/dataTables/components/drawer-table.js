@@ -8,7 +8,7 @@ import {
 } from "@chakra-ui/react";
 
 export default function DrawerTable(props) {
-  const { selectedRowData } = props;
+  const { selectedRowData, latency } = props;
 
   return (
     <TableContainer>
@@ -26,6 +26,10 @@ export default function DrawerTable(props) {
           <Tr>
             <Td>CreatedAT</Td>
             <Td>{selectedRowData ? selectedRowData.initiated_at : ""}</Td>
+          </Tr>
+          <Tr>
+            <Td>Latency</Td>
+            <Td>{selectedRowData ? latency : ""}</Td>
           </Tr>
         </Tbody>
       </Table>
