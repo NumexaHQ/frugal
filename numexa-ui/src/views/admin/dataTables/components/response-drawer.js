@@ -8,7 +8,7 @@ import {
   DrawerOverlay,
   useColorModeValue,
 } from "@chakra-ui/react";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import ReactJson from "react-json-view";
 import { connect } from "react-redux";
 import DrawerTable from "./drawer-table";
@@ -24,6 +24,8 @@ function ResponseDrawer(props) {
     selectedRowData,
     data,
     drawerData,
+    getLatency,
+    latency,
   } = props;
 
   // useEffect(() => {
@@ -37,6 +39,11 @@ function ResponseDrawer(props) {
 
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
+
+  useEffect(() => {
+    getLatency({ requestId: selectedRowData.id });
+  });
+
   return (
     <>
       <Drawer
@@ -52,7 +59,7 @@ function ResponseDrawer(props) {
           <DrawerHeader borderBottomWidth="1px">Information</DrawerHeader>
 
           <DrawerBody>
-            <DrawerTable selectedRowData={selectedRowData} />
+            <DrawerTable selectedRowData={selectedRowData} latency={latency} />
             <ReactJson src={data} theme="solarized" displayDataTypes={false} />
           </DrawerBody>
 
@@ -65,10 +72,12 @@ function ResponseDrawer(props) {
 
 const mapState = (state) => ({
   response: state.ListResponse.response || [],
+  latency: state.GetLatency.latency,
 });
 
 const mapDispatch = (dispatch) => ({
   getResponse: dispatch.ListResponse.getResponse,
+  getLatency: dispatch.GetLatency.getLatency,
 });
 
 export default connect(mapState, mapDispatch)(ResponseDrawer);

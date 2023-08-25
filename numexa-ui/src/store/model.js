@@ -8,16 +8,6 @@ const AUTH_BASE_URL = "http://localhost:8080";
 
 const VIBE_BASE_URL = "http://localhost:8082";
 
-// use base url for production else fallback to localhost
-// const AUTH_BASE_URL =
-//   process.env.REACT_APP_AUTH_BASE_URL ||
-//   `${PROTOCOL}://${BASE_URL}:8080` ||
-//   "http://localhost:8080";
-// const VIBE_BASE_URL =
-//   process.env.REACT_APP_VIBE_BASE_URL ||
-//   `${PROTOCOL}://${BASE_URL}:8082` ||
-//   "http://localhost:8082";
-
 // const AUTH_BASE_URL = `${PROTOCOL}//${BASE_URL}/auth-service`;
 // const VIBE_BASE_URL = `${PROTOCOL}//${BASE_URL}/api`;
 
@@ -390,6 +380,33 @@ export const GenerateKey = {
       fetch(`${AUTH_BASE_URL}/generate_api_key`, requestOptions)
         .then((response) => response.json())
         .then((data) => dispatch.GenerateKey.setCodeContent(data.key));
+    },
+  }),
+};
+
+export const GetLatency = {
+  state: {
+    latency: 0,
+  },
+  reducers: {
+    setLatency(state, latency) {
+      return { ...state, latency };
+    },
+  },
+  effects: (dispatch) => ({
+    async getLatency(payload, state) {
+      var requestOptions = {
+        method: "GET",
+        headers: {
+          Authorization: getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+        redirect: "follow",
+      };
+
+      fetch(`${VIBE_BASE_URL}/latency/${payload.requestId}`, requestOptions)
+        .then((response) => response.json())
+        .then((data) => dispatch.GetLatency.setLatency(data.latency_id));
     },
   }),
 };
