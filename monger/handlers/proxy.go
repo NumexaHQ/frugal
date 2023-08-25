@@ -8,12 +8,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/NumexaHQ/monger/model"
 	nxopenaiModel "github.com/NumexaHQ/monger/model/openai"
 	"github.com/NumexaHQ/monger/utils"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -73,6 +75,21 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 
 	// Use the default transport (http.DefaultTransport) for the proxy request
 	proxyClient := http.DefaultClient
+
+	// Create a new retryable http client
+	retry := r.Header.Get("X-Numexa-Retry")
+	retryCount := r.Header.Get("X-Numexa-Retry-Count")
+	if retry == "true" && retryCount != "" {
+		retryClient := retryablehttp.NewClient()
+		retryCountInt, err := strconv.Atoi(retryCount)
+		if err != nil {
+			logrus.Errorf("Error converting retry count to int: %v", err)
+			retryCountInt = 3
+		}
+
+		retryClient.RetryMax = retryCountInt
+		proxyClient = retryClient.StandardClient() // *http.Client
+	}
 
 	initTime := time.Now()
 
