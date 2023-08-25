@@ -4,8 +4,12 @@ import { getAuthHeader } from "utils/utils";
 const BASE_URL = window.location.hostname;
 const PROTOCOL = window.location.protocol;
 
-const AUTH_BASE_URL = `${PROTOCOL}//${BASE_URL}/auth-service`;
-const VIBE_BASE_URL = `${PROTOCOL}//${BASE_URL}/api`;
+var AUTH_BASE_URL = `${PROTOCOL}//${BASE_URL}/auth-service`;
+var VIBE_BASE_URL = `${PROTOCOL}//${BASE_URL}/api`;
+if (BASE_URL === "localhost") {
+  AUTH_BASE_URL = `${PROTOCOL}//${BASE_URL}:8080`;
+  VIBE_BASE_URL = `${PROTOCOL}//${BASE_URL}:8082`;
+}
 
 export const CommonState = {
   state: {
