@@ -69,6 +69,10 @@ func ProxyRequestBuilderForHTTPResponse(ctx context.Context, r *http.Response, a
 	// header to map
 	header := make(map[string]string)
 	for k, v := range r.Header {
+		// skip sensitive headers
+		if utils.SensitiveHeaders[k] {
+			continue
+		}
 		header[k] = v[0]
 	}
 
