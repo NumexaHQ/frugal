@@ -65,12 +65,13 @@ func (p *ProxyResponse) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.D
 	return nil
 }
 
-func ProxyRequestBuilderForHTTPResponse(ctx context.Context, r *http.Response, authDB nxAuthDB.DB, initTime time.Time, promptTokenLen int, responseTime time.Time, apiKey string) (ProxyResponse, error) {
+func ProxyResponseBuilderForHTTPResponse(ctx context.Context, r *http.Response, authDB nxAuthDB.DB, initTime time.Time, promptTokenLen int, responseTime time.Time, apiKey string) (ProxyResponse, error) {
 	// header to map
 	header := make(map[string]string)
 	for k, v := range r.Header {
 		// skip sensitive headers
-		if utils.SensitiveHeaders[k] {
+		_, ok := utils.SensitiveHeaders[k]
+		if ok {
 			continue
 		}
 		header[k] = v[0]

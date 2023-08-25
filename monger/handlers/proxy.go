@@ -134,7 +134,7 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	pRes, err := model.ProxyRequestBuilderForHTTPResponse(r.Context(), proxyResp, h.AuthDB, initTime, tokenLength, responseTime, apiKey)
+	pRes, err := model.ProxyResponseBuilderForHTTPResponse(r.Context(), proxyResp, h.AuthDB, initTime, tokenLength, responseTime, apiKey)
 	if err != nil {
 		logrus.Errorf("Error building proxy response: %v", err)
 		return

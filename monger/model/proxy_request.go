@@ -8,6 +8,7 @@ import (
 	"time"
 
 	nxAuthDB "github.com/NumexaHQ/captainCache/pkg/db"
+	"github.com/NumexaHQ/monger/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,6 +49,11 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 	// header to map
 	header := make(map[string]string)
 	for k, v := range r.Header {
+		// skip sensitive headers
+		_, ok := utils.SensitiveHeaders[k]
+		if ok {
+			continue
+		}
 		header[k] = v[0]
 	}
 
