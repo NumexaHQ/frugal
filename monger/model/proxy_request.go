@@ -23,6 +23,7 @@ type ProxyRequest struct {
 	Provider         string `json:"provider"`
 	UserID           int32  `json:"user_id"`
 	ProjectID        int32  `json:"project_id"`
+	IsCached         bool   `json:"is_cached"`
 }
 
 func (p *ProxyRequest) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB, apiKey string) error {
@@ -45,6 +46,12 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 
 	// get requset idfrom context
 	rid := GetRequestID(ctx)
+
+	//check for cache header
+	isCached := false
+	if r.Header.Get("X-Numexa-Cache") == "true" {
+		isCached = true
+	}
 
 	// header to map
 	header := make(map[string]string)
@@ -79,6 +86,7 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 		RequestHeaders:   string(hB),
 		RequestBody:      body,
 		Provider:         "openai",
+		IsCached:         isCached,
 	}
 
 	err = pr.SetUserIdentifier(ctx, authDB, apiKey)
