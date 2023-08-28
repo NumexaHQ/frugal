@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
 	"github.com/NumexaHQ/monger/model"
 	nxopenaiModel "github.com/NumexaHQ/monger/model/openai"
+	gptcache "github.com/NumexaHQ/monger/pkg/cache"
 	"github.com/NumexaHQ/monger/utils"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/sirupsen/logrus"
@@ -29,36 +30,34 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint := originalURL[index+len("/v1/openai/"):]
-	newURL := "https://api.openai.com/v1/" + endpoint
-	logrus.Infof("New URL: %s", newURL)
+	endpoint := originalURL[index+len(commonConstants.OPENAI_PROXY_STUB):]
+	newURL := commonConstants.OPENAI_BASE_URL + endpoint
 	useCache := r.Header.Get("X-Numexa-Cache") == "true"
-	// new url
+
 	u, err := url.Parse(newURL)
 	if err != nil {
 		http.Error(w, "Error parsing URL", http.StatusInternalServerError)
 		return
 	}
 
-	buf, _ := ioutil.ReadAll(r.Body)
-	rdr1 := ioutil.NopCloser(bytes.NewBuffer(buf))
-	rdr2 := ioutil.NopCloser(bytes.NewBuffer(buf))
+	buf, _ := io.ReadAll(r.Body)
+	rdr1 := io.NopCloser(bytes.NewBuffer(buf))
+	rdr2 := io.NopCloser(bytes.NewBuffer(buf))
 	r.Body = rdr2
 
 	// Extract prompt from request body
-	requestBodyString := string(buf)
-	prompt, err := utils.ExtractContentFromRequestBody(requestBodyString)
+	prompt, err := utils.ExtractContentFromRequestBody(io.NopCloser(bytes.NewBuffer(buf)))
 	if err != nil {
 		logrus.Errorf("Error extracting content from request body: %v", err)
 		return
 	}
 
-	if useCache {
-		cacheResponse, cacheErr := h.fetchFromCache(prompt)
-		if cacheErr != nil {
-			h.serveCachedResponse(w, r, cacheResponse)
-			return
-		}
+	gptCache := gptcache.New(prompt, useCache)
+
+	// check if cache is enabled and if there is a cached response
+	if gptCache.Enabled && gptCache.GetCachedAnswer() != "" {
+		h.serveCachedAnswer(w, r, gptCache.GPTResponse)
+		return
 	}
 
 	// Create a new proxy request with the target URL
@@ -155,98 +154,26 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("Error building proxy response: %v", err)
 		return
 	}
-	if useCache {
-		prompt := prompt
-		h.storeInCache(prompt, r, proxyResp, pRes.ResponseBody)
-	}
-	h.ChConfig.ResC <- &pRes
-}
 
-// caching functions
-func (h *Handler) storeInCache(prompt string, r *http.Request, proxyResp *http.Response, responseBody string) {
-	// Create a map to represent the data to be stored in the cache
-	cacheData := map[string]interface{}{
-		"prompt": prompt,
-		"answer": responseBody, // You can modify this part as needed
-	}
-
-	// Marshal the cache data to JSON
-	cacheJSON, err := json.Marshal(cacheData)
-	if err != nil {
-		logrus.Errorf("Error marshaling cache data to JSON: %v", err)
-		return
-	}
-
-	// Create a new request to store data in the cache server
-	cacheURL := "http://nxa-cache:8000/put"
-	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(cacheJSON))
-
-	if err != nil {
-		logrus.Errorf("Error creating cache request: %v", err)
-		return
-	}
-
-	// Set headers for the cache request
-	cacheReq.Header.Set("Accept", "application/json")
-	cacheReq.Header.Set("Content-Type", "application/json")
-	// Add any additional headers you need here
-
-	// Perform the cache request to store the response
-	_, cacheErr := http.DefaultClient.Do(cacheReq)
-	if cacheErr != nil {
-		logrus.Errorf("Error storing response in cache: %v", cacheErr)
-	}
-
-	// Reset the response body for subsequent use
-	proxyResp.Body = ioutil.NopCloser(bytes.NewBuffer([]byte{}))
-}
-
-func (h *Handler) serveCachedResponse(w http.ResponseWriter, r *http.Request, cacheResp *http.Response) {
-	// Copy headers from the cached response to the original response
-	for key, values := range cacheResp.Header {
-		for _, value := range values {
-			w.Header().Add(key, value)
+	// cache only if the response is 200
+	if gptCache.Enabled && pRes.ResponseStatusCode == 200 {
+		// if code is here, it means that the cache is enabled and there is no cached response yet
+		err = gptCache.SetCachedAnswer(pRes.ResponseBody)
+		if err != nil {
+			logrus.Errorf("Error setting cached answer: %v", err)
+			// donot return here, we still want to ingest the response
 		}
 	}
 
-	// Set the status code for the original response to match the cached response
-	w.WriteHeader(cacheResp.StatusCode)
-
-	// Copy the response body from the cached response to the original response
-	io.Copy(w, cacheResp.Body)
-
-	// Close the cached response body
-	cacheResp.Body.Close()
+	h.ChConfig.ResC <- &pRes
 }
 
-func (h *Handler) fetchFromCache(prompt string) (*http.Response, error) {
-	// Create a map to represent the request data
-	requestData := map[string]interface{}{
-		"prompt": prompt,
-	}
+func (h *Handler) serveCachedAnswer(w http.ResponseWriter, r *http.Request, gc gptcache.GPTCache) {
+	// set content type
+	w.Header().Set("Content-Type", "application/json")
 
-	// Marshal the request data to JSON
-	requestJSON, err := json.Marshal(requestData)
-	if err != nil {
-		return nil, err
-	}
+	// set status code
+	w.WriteHeader(200)
 
-	// Create a new request to fetch data from the cache server
-	cacheURL := "http://nxa-cache:8000/get"
-	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(requestJSON))
-	if err != nil {
-		return nil, err
-	}
-
-	// Set headers for the cache request
-	cacheReq.Header.Set("Content-Type", "application/json")
-	// Add any additional headers you need here
-
-	// Perform the cache request
-	cacheResp, err := http.DefaultClient.Do(cacheReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return cacheResp, nil
+	w.Write([]byte(gc.Answer))
 }

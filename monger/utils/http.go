@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"io"
 )
 
 var SensitiveHeaders = map[string]bool{
@@ -22,17 +23,23 @@ type Message struct {
 }
 
 // Helper function to extract content from the request body
-func ExtractContentFromRequestBody(requestBodyString string) (string, error) {
+func ExtractContentFromRequestBody(rb io.ReadCloser) (string, error) {
 	var reqBody RequestBody
 
+	// Read the request body
+	requestBodyBytes, err := io.ReadAll(rb)
+	if err != nil {
+		return "", err
+	}
+
 	// Unmarshal the JSON request body into the RequestBody struct
-	if err := json.Unmarshal([]byte(requestBodyString), &reqBody); err != nil {
+	if err := json.Unmarshal(requestBodyBytes, &reqBody); err != nil {
 		return "", err
 	}
 
 	// Check if there is at least one message in the messages array
 	if len(reqBody.Messages) < 1 {
-		return "", errors.New("No messages found in the request body")
+		return "", errors.New("no messages found in the request body")
 	}
 
 	// Extract the content from the first message

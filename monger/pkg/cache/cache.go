@@ -1,49 +1,133 @@
 package cache
 
-// Define a struct for sending data to the caching server
-type CacheRequest struct {
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+
+	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
+	"github.com/sirupsen/logrus"
+)
+
+type Cache struct {
+	Enabled        bool     `json:"enabled"`
+	OriginalPrompt string   `json:"original_prompt"`
+	GPTResponse    GPTCache `json:"gpt_response"`
+}
+
+type GPTCache struct {
 	Prompt string `json:"prompt"`
 	Answer string `json:"answer"`
 }
 
-// func serveCachedResponse(w http.ResponseWriter, cachedResp *model.ProxyResponse) {
-// 	// Copy all headers from the cached response to the original response
-// 	for key, values := range cachedResp.Headers {
-// 		for _, value := range values {
-// 			w.Header().Add(key, value)
-// 		}
-// 	}
+func New(prompt string, enabled bool) Cache {
+	if enabled {
+		gptCache, err := fetchFromGPTCache(prompt)
+		if err != nil {
+			logrus.Errorf("Error fetching from GPT cache: %v", err)
+		}
 
-// 	// Set the status code for the original response to match the cached response
-// 	w.WriteHeader(cachedResp.StatusCode)
+		return Cache{
+			Enabled:        enabled,
+			OriginalPrompt: prompt,
+			GPTResponse:    gptCache,
+		}
+	} else {
+		return Cache{
+			Enabled:        enabled,
+			OriginalPrompt: prompt,
+		}
+	}
+}
 
-// 	// Write the cached response body to the original response
-// 	w.Write(cachedResp.Body)
-// }
+func (c *Cache) GetOriginalPrompt() string {
+	return c.OriginalPrompt
+}
 
-// func storeResponseInCache(cacheKey string, cacheValue *model.ProxyResponse) error {
-// 	// Prepare the data for sending to the caching server
-// 	cacheRequest := CacheRequest{
-// 		Prompt: "Your Prompt Data",
-// 		Answer: "Your Answer Data",
-// 	}
+func (c *Cache) GetCachedPrompt() string {
+	return c.GPTResponse.Prompt
+}
 
-// 	// Marshal the cacheRequest into JSON
-// 	requestData, err := json.Marshal(cacheRequest)
-// 	if err != nil {
-// 		return err
-// 	}
+func (c *Cache) GetCachedAnswer() string {
+	return c.GPTResponse.Answer
+}
 
-// 	// Send a POST request to the caching server to store the response
-// 	resp, err := http.Post("http://localhost:8000/put", "application/json", bytes.NewBuffer(requestData))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer resp.Body.Close()
+func (c *Cache) SetCachedAnswer(answer string) error {
+	c.GPTResponse.Answer = answer
+	return c.storeInCache()
+}
 
-// 	if resp.StatusCode != http.StatusOK {
-// 		return fmt.Errorf("Caching server returned non-OK status code: %d", resp.StatusCode)
-// 	}
+// private method. todo: make this public, if needed
+func (c *Cache) storeInCache() error {
+	// Marshal the cache data to JSON
+	cacheJSON, err := json.Marshal(c.GPTResponse)
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	// Create a new request to store data in the cache server
+	cacheURL := commonConstants.GPTCACHE_URL + "/put"
+	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(cacheJSON))
+	if err != nil {
+		logrus.Errorf("Error creating cache request: %v", err)
+		return err
+	}
+
+	// Set headers for the cache request
+	cacheReq.Header.Set("Accept", "application/json")
+	cacheReq.Header.Set("Content-Type", "application/json")
+	// Add any additional headers you need here
+
+	// Perform the cache request to store the response
+	_, err = http.DefaultClient.Do(cacheReq)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Cache) CacheExists() bool {
+	return c.GPTResponse.Prompt != ""
+}
+
+func fetchFromGPTCache(prompt string) (GPTCache, error) {
+	// Create a map to represent the request data
+	requestData := map[string]interface{}{
+		"prompt": prompt,
+	}
+
+	// Marshal the request data to JSON
+	requestJSON, err := json.Marshal(requestData)
+	if err != nil {
+		return GPTCache{}, err
+	}
+
+	// Create a new request to fetch data from the cache server
+	cacheURL := commonConstants.GPTCACHE_URL + "/get"
+	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(requestJSON))
+	if err != nil {
+		return GPTCache{}, err
+	}
+
+	// Set headers for the cache request
+	cacheReq.Header.Set("Content-Type", "application/json")
+
+	// Perform the cache request
+	cacheResp, err := http.DefaultClient.Do(cacheReq)
+	if err != nil {
+		return GPTCache{}, err
+	}
+
+	return parseGPTCache(cacheResp)
+}
+
+func parseGPTCache(c *http.Response) (GPTCache, error) {
+	var cr GPTCache
+	err := json.NewDecoder(c.Body).Decode(&cr)
+	if err != nil {
+		logrus.Errorf("Error decoding cache response: %v", err)
+		return GPTCache{}, err
+	}
+	return cr, nil
+}

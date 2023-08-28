@@ -108,7 +108,7 @@ services:
   numexa-cache:
     container_name: nxa-cache
     restart: always
-    image: zilliz/gptcache:latest
+    image: gpt-cache:dev
     ports:
       - 8000:8000
     networks:
