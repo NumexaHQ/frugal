@@ -249,32 +249,6 @@ func (h *Handler) ComputeLatencyByRequestId(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(responseData)
 }
 
-// below is the model.proxyRepsonse.ResponseBody struct json response from openai
-
-/*
-	{
-	  "id": "chatcmpl-7iyWV166Cahu7A08Iw8FrG3M4LXnd",
-	  "object": "chat.completion",
-	  "created": 1690953439,
-	  "model": "gpt-3.5-turbo-0613",
-	  "choices": [
-	    {
-	      "index": 0,
-	      "message": {
-	        "role": "assistant",
-	        "content": "I'm sorry, but I am an AI language model and I am unable to physically feed you anything. However, I can provide you with a recipe for chocolate chip cookies if you'd like!"
-	      },
-	      "finish_reason": "stop"
-	    }
-	  ],
-	  "usage": {
-	    "prompt_tokens": 12,
-	    "completion_tokens": 39,
-	    "total_tokens": 51
-	  }
-	}
-*/
-
 func (h *Handler) ComputeAverageTokensByProjectID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(float64)
 	projectID := c.Params("projectID")

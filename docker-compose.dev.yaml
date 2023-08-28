@@ -56,56 +56,64 @@ services:
       - nxa-network
 
   nxa-monger:
-      container_name: nxa-monger
-      restart: always
-      image: numexa-monger:dev
-      build:
-        context: .
-        dockerfile: ./monger-proxy/Dockerfile
-      env_file:
-        - ./numexa.env
-        - ./clickhouse.env
-      ports:
-        - 8081:8081
-      depends_on:
-        - nxa-postgres
-        - nxa-clickhouse-db
-      networks:
-        - nxa-network
+    container_name: nxa-monger
+    restart: always
+    image: numexa-monger:dev
+    build:
+      context: .
+      dockerfile: ./monger-proxy/Dockerfile
+    env_file:
+      - ./numexa.env
+      - ./clickhouse.env
+    ports:
+      - 8081:8081
+    depends_on:
+      - nxa-postgres
+      - nxa-clickhouse-db
+    networks:
+      - nxa-network
 
   nxa-vibe:
-      container_name: nxa-vibe
-      restart: always
-      image: numexa-vibe:dev
-      build:
-        context: .
-        dockerfile: ./vibe/Dockerfile
-      env_file:
-        - ./numexa.env
-        - ./clickhouse.env
-      ports:
-        - 8082:8082
-      depends_on:
-        - nxa-clickhouse-db
-      networks:
-        - nxa-network
+    container_name: nxa-vibe
+    restart: always
+    image: numexa-vibe:dev
+    build:
+      context: .
+      dockerfile: ./vibe/Dockerfile
+    env_file:
+      - ./numexa.env
+      - ./clickhouse.env
+    ports:
+      - 8082:8082
+    depends_on:
+      - nxa-clickhouse-db
+    networks:
+      - nxa-network
 
   nxa-ui:
-      container_name: nxa-ui
-      restart: always
-      image: numexa-ui:dev
-      env_file:
-        - ./numexa.env
-        - ./dev.env
-      ports:
-        - 3000:3000
-      depends_on:
-        - nxa-monger
-        - nxa-vibe
-      networks:
-        - nxa-network
+    container_name: nxa-ui
+    restart: always
+    image: numexa-ui:dev
+    env_file:
+      - ./numexa.env
+      - ./dev.env
+    ports:
+      - 3000:3000
+    depends_on:
+      - nxa-monger
+      - nxa-vibe
+    networks:
+      - nxa-network
 
- 
+  numexa-cache:
+    container_name: nxa-cache
+    restart: always
+    image: zilliz/gptcache:latest
+    ports:
+      - 8000:8000
+    networks:
+      - nxa-network
+
 networks:
   nxa-network:
     driver: bridge
