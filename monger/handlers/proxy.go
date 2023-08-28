@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
 	"github.com/NumexaHQ/monger/model"
 	nxopenaiModel "github.com/NumexaHQ/monger/model/openai"
+	gptcache "github.com/NumexaHQ/monger/pkg/cache"
 	"github.com/NumexaHQ/monger/utils"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/sirupsen/logrus"
@@ -29,21 +30,35 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint := originalURL[index+len("/v1/openai/"):]
-	newURL := "https://api.openai.com/v1/" + endpoint
-	logrus.Infof("New URL: %s", newURL)
+	endpoint := originalURL[index+len(commonConstants.OPENAI_PROXY_STUB):]
+	newURL := commonConstants.OPENAI_BASE_URL + endpoint
+	useCache := r.Header.Get("X-Numexa-Cache") == "true"
 
-	// new url
 	u, err := url.Parse(newURL)
 	if err != nil {
 		http.Error(w, "Error parsing URL", http.StatusInternalServerError)
 		return
 	}
 
-	buf, _ := ioutil.ReadAll(r.Body)
-	rdr1 := ioutil.NopCloser(bytes.NewBuffer(buf))
-	rdr2 := ioutil.NopCloser(bytes.NewBuffer(buf))
+	buf, _ := io.ReadAll(r.Body)
+	rdr1 := io.NopCloser(bytes.NewBuffer(buf))
+	rdr2 := io.NopCloser(bytes.NewBuffer(buf))
 	r.Body = rdr2
+
+	// Extract prompt from request body
+	prompt, err := utils.ExtractContentFromRequestBody(io.NopCloser(bytes.NewBuffer(buf)))
+	if err != nil {
+		logrus.Errorf("Error extracting content from request body: %v", err)
+		return
+	}
+
+	gptCache := gptcache.New(prompt, useCache)
+
+	// check if cache is enabled and if there is a cached response
+	if gptCache.Enabled && gptCache.GetCachedAnswer() != "" {
+		h.serveCachedAnswer(w, r, gptCache.GPTResponse)
+		return
+	}
 
 	// Create a new proxy request with the target URL
 	proxyReq, err := http.NewRequest(r.Method, u.String(), rdr1)
@@ -139,5 +154,26 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("Error building proxy response: %v", err)
 		return
 	}
+
+	// cache only if the response is 200
+	if gptCache.Enabled && pRes.ResponseStatusCode == 200 {
+		// if code is here, it means that the cache is enabled and there is no cached response yet
+		err = gptCache.SetCachedAnswer(pRes.ResponseBody)
+		if err != nil {
+			logrus.Errorf("Error setting cached answer: %v", err)
+			// donot return here, we still want to ingest the response
+		}
+	}
+
 	h.ChConfig.ResC <- &pRes
+}
+
+func (h *Handler) serveCachedAnswer(w http.ResponseWriter, r *http.Request, gc gptcache.GPTCache) {
+	// set content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// set status code
+	w.WriteHeader(200)
+
+	w.Write([]byte(gc.Answer))
 }

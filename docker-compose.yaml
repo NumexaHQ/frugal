@@ -104,6 +104,15 @@ services:
       networks:
         - nxa-network
 
+  numexa-cache:
+    container_name: nxa-cache
+    restart: always
+    image: gpt-cache:dev
+    ports:
+      - 8000:8000
+    networks:
+      - nxa-network
+
   nginx:
       container_name: nginx
       restart: always
