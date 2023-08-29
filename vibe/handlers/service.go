@@ -139,6 +139,7 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 			StatusCode:  statusCode,
 			Cost:        cost,
 			Provider:    v.Provider,
+			IsCached:    v.IsCached,
 		})
 	}
 

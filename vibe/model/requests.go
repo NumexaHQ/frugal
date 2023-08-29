@@ -9,4 +9,5 @@ type AllRequestsTableResponse struct {
 	Prompt      string  `json:"prompt"`
 	Cost        float64 `json:"cost"`
 	Provider    string  `json:"provider"`
+	IsCached    bool    `json:"is_cached"`
 }
