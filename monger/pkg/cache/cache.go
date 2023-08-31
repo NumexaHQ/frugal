@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
+	nxAuthDB "github.com/NumexaHQ/captainCache/pkg/db"
+	"github.com/NumexaHQ/monger/model"
+	nxClickhouse "github.com/NumexaHQ/monger/pkg/db/clickhouse"
 	"github.com/sirupsen/logrus"
 )
 
@@ -130,4 +134,16 @@ func parseGPTCache(c *http.Response) (GPTCache, error) {
 		return GPTCache{}, err
 	}
 	return cr, nil
+}
+
+func (c *Cache) IngestCachedRequest(r *http.Request, rt time.Time, authDB nxAuthDB.DB, url, apiKey string, chConfig nxClickhouse.ClickhouseConfig) {
+	pr, err := model.ProxyRequestBuilderForHTTPRequest(r, rt, authDB, url, apiKey)
+	if err != nil {
+		logrus.Errorf("Error building proxy request: %v", err)
+	}
+
+	pr.IsCacheHit = true
+	go func() {
+		chConfig.ReqC <- &pr
+	}()
 }

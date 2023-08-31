@@ -24,6 +24,7 @@ type ProxyRequest struct {
 	UserID           int32  `json:"user_id"`
 	ProjectID        int32  `json:"project_id"`
 	IsCached         bool   `json:"is_cached"`
+	IsCacheHit       bool   `json:"is_cache_hit"`
 }
 
 func (p *ProxyRequest) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB, apiKey string) error {

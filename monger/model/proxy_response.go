@@ -236,3 +236,26 @@ func streamToNonStream(rbs []openaiModel.ResponseBody) openaiModel.ResponseBody 
 	rbFinal.Usage.CompletionTokens = tokenLength
 	return rbFinal
 }
+
+func ProxyResponseBuilderForCacheHit(ctx context.Context, jsonString string, authDB nxAuthDB.DB, initTime time.Time, promptTokenLen int, responseTime time.Time, apiKey string) (ProxyResponse, error) {
+	// Create a new ProxyResponse
+	rid := GetRequestID(ctx)
+	pr := ProxyResponse{
+		RequestID:          rid,
+		InitiatedTimestamp: initTime.Unix(),
+		ResponseTimestamp:  time.Now().Unix(),
+		ResponseStatusCode: 200,
+		ResponseHeaders:    "",
+		ResponseBody:       jsonString,
+		Provider:           "openapi",
+	}
+
+	// Set the user identifier
+	err := pr.SetUserIdentifier(ctx, authDB, apiKey)
+	if err != nil {
+		log.Errorf("Error setting user identifier: %v", err)
+		return ProxyResponse{}, err
+	}
+
+	return pr, nil
+}
