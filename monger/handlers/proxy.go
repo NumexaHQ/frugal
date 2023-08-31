@@ -24,6 +24,8 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 	requestTime := time.Now()
 	originalURL := r.URL.String()
 
+	apiKey := r.Header.Get("X-Numexa-Api-Key")
+
 	index := strings.Index(originalURL, "/v1/openai/")
 	if index == -1 {
 		http.Error(w, "Invalid URL", http.StatusNotFound)
@@ -57,6 +59,7 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 	// check if cache is enabled and if there is a cached response
 	if gptCache.Enabled && gptCache.GetCachedAnswer() != "" {
 		h.serveCachedAnswer(w, r, gptCache.GPTResponse)
+		gptCache.IngestCachedRequest(r, requestTime, h.AuthDB, newURL, apiKey, h.ChConfig)
 		return
 	}
 
@@ -73,8 +76,6 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 			proxyReq.Header.Add(key, value)
 		}
 	}
-
-	apiKey := r.Header.Get("X-Numexa-Api-Key")
 
 	pr, err := model.ProxyRequestBuilderForHTTPRequest(r, requestTime, h.AuthDB, newURL, apiKey)
 	if err != nil {
@@ -169,11 +170,28 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) serveCachedAnswer(w http.ResponseWriter, r *http.Request, gc gptcache.GPTCache) {
-	// set content type
+	apiKey := r.Header.Get("X-Numexa-Api-Key")
+
+	initTime := time.Now()
+
 	w.Header().Set("Content-Type", "application/json")
 
 	// set status code
 	w.WriteHeader(200)
 
 	w.Write([]byte(gc.Answer))
+
+	responseTime := time.Now()
+
+	//tokenLength
+	tokenLength := 0
+
+	pRes, err := model.ProxyResponseBuilderForCacheHit(r.Context(), gc.Answer, h.AuthDB, initTime, tokenLength, responseTime, apiKey)
+	if err != nil {
+		logrus.Errorf("Error building proxy response: %v", err)
+		return
+	}
+
+	h.ChConfig.ResC <- &pRes
+
 }

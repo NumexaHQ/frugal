@@ -10,4 +10,5 @@ type AllRequestsTableResponse struct {
 	Cost        float64 `json:"cost"`
 	Provider    string  `json:"provider"`
 	IsCached    bool    `json:"is_cached"`
+	IsCacheHit  bool    `json:"is_cache_hit"`
 }

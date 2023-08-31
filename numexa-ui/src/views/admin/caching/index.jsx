@@ -1,15 +1,15 @@
 
 import {
     Box,
+    SimpleGrid,
     Stack
 } from '@chakra-ui/react';
-
+import MiniStatistics from "components/card/MiniStatistics";
 
 
 
 import { connect } from 'react-redux';
 
-import Banner from './components/banner';
 
 
 
@@ -19,7 +19,26 @@ const CachingPolicies = ({props}) => {
     return (
         <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
             <Stack spacing={3}>
-                <Banner />
+                {/* <Banner /> */}
+                <SimpleGrid
+          columns={{ base: 3, md: 3, lg: 3, "2xl": 3 }}
+          gap='20px'
+          mb='20px'>    
+          <MiniStatistics
+            name='Cache Hits'
+            value={90}
+          />
+          <MiniStatistics
+            name='Total Cost Saved'
+            value={90}
+          />
+            <MiniStatistics
+            name='Total Time Saved'
+            value={90}
+            />
+
+
+          </SimpleGrid>
             </Stack>
         </Box>
 

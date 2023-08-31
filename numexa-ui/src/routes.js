@@ -1,9 +1,9 @@
 import { Icon } from "@chakra-ui/react";
 import {
   MdAddAlert,
+  MdCached,
   MdDashboard,
   MdKey,
-  MdMoney,
   MdPerson,
   MdTableChart,
 } from "react-icons/md";
@@ -39,9 +39,9 @@ export const routes = [
     component: DataTables,
   },
   {
-    name: "Budget Optimization",
+    name: "Caching",
     layout: "/admin",
-    icon: <Icon as={MdMoney} width="20px" height="20px" color="inherit" />,
+    icon: <Icon as={MdCached} width="20px" height="20px" color="inherit" />,
     path: "/cost",
     component: CachePolicies,
   },
