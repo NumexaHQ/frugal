@@ -127,12 +127,12 @@ export const requestDataColumn = [
     },
   },
   {
-    Header: "In Memory",
+    Header: "Cached",
     accessor: (row) => {
       if (row.is_cached) {
-        return <Badge colorScheme="green">{"Cached"}</Badge>;
+        return <Badge colorScheme="green">{"True"}</Badge>;
       }
-      return <Badge colorScheme="red">{"Not Cached"}</Badge>;
+      return <Badge colorScheme="red">{"False"}</Badge>;
     },
   },
   {

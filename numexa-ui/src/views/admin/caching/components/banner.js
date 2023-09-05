@@ -1,5 +1,6 @@
 // Chakra imports
 import { Button, Flex, Link, Text } from "@chakra-ui/react";
+import { LuExternalLink } from "react-icons/lu";
 // Assets
 
 export default function Banner() {
@@ -29,8 +30,7 @@ export default function Banner() {
         fontWeight="700"
         lineHeight={{ base: "32px", md: "42px" }}
       >
-        Enable/Disable policies to have the control over usage & optimize the
-        cost.
+        Get Started! To enable caching please read the documentation.
       </Text>
       <Text
         fontSize="md"
@@ -51,24 +51,25 @@ export default function Banner() {
         creating your own! */}
       </Text>
       <Flex align="center">
-        <Button
-          bg="white"
-          color="black"
-          _hover={{ bg: "whiteAlpha.900" }}
-          _active={{ bg: "white" }}
-          _focus={{ bg: "white" }}
-          fontWeight="500"
-          fontSize="14px"
-          py="20px"
-          px="27"
-          me="38px"
+        <Link
+          href="https://docs.numexa.io/docs/getting-started/quick-integration"
+          target="blank"
         >
-          Learn More
-        </Button>
-        <Link>
-          <Text color="white" fontSize="sm" fontWeight="500">
-            Coming Soon!
-          </Text>
+          <Button
+            bg="white"
+            color="black"
+            _hover={{ bg: "whiteAlpha.900" }}
+            _active={{ bg: "white" }}
+            _focus={{ bg: "white" }}
+            fontWeight="500"
+            fontSize="14px"
+            py="20px"
+            px="27"
+            me="38px"
+          >
+            <LuExternalLink />
+            &nbsp; Read the Docs
+          </Button>
         </Link>
       </Flex>
     </Flex>
