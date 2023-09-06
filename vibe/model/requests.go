@@ -11,5 +11,5 @@ type AllRequestsTableResponse struct {
 	Provider       string  `json:"provider"`
 	IsCached       bool    `json:"is_cached"`
 	IsCacheHit     bool    `json:"is_cache_hit"`
-	CustomMetaData string  `json:"custom_meta_data"`
+	CustomMetaData string  `json:"custom_metadata"`
 }

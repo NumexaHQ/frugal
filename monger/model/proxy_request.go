@@ -56,7 +56,7 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 	}
 
 	// custom metadata from the header
-	metaDataHeader := r.Header.Get("X-Numexa-Metadata")
+	metaDataHeader := r.Header.Get("X-Numexa-Custom-Metadata")
 	var metaData map[string]interface{}
 	if metaDataHeader != "" {
 		err := json.Unmarshal([]byte(metaDataHeader), &metaData)
