@@ -131,16 +131,17 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 		}
 
 		res = append(res, vibeModel.AllRequestsTableResponse{
-			ID:          v.RequestID,
-			ProjectID:   v.ProjectID,
-			InitiatedAt: t.Format(time.UnixDate),
-			Model:       llmModel,
-			Prompt:      prompt,
-			StatusCode:  statusCode,
-			Cost:        cost,
-			Provider:    v.Provider,
-			IsCached:    v.IsCached,
-			IsCacheHit:  v.IsCacheHit,
+			ID:             v.RequestID,
+			ProjectID:      v.ProjectID,
+			InitiatedAt:    t.Format(time.UnixDate),
+			Model:          llmModel,
+			Prompt:         prompt,
+			StatusCode:     statusCode,
+			Cost:           cost,
+			Provider:       v.Provider,
+			IsCached:       v.IsCached,
+			IsCacheHit:     v.IsCacheHit,
+			CustomMetaData: v.CustomMetaData,
 		})
 	}
 

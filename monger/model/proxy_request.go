@@ -25,6 +25,7 @@ type ProxyRequest struct {
 	ProjectID        int32  `json:"project_id"`
 	IsCached         bool   `json:"is_cached"`
 	IsCacheHit       bool   `json:"is_cache_hit"`
+	CustomMetaData   string `json:"custom_fields"`
 }
 
 func (p *ProxyRequest) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB, apiKey string) error {
@@ -54,6 +55,23 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 		isCached = true
 	}
 
+	// custom metadata from the header
+	metaDataHeader := r.Header.Get("X-Numexa-Metadata")
+	var metaData map[string]interface{}
+	if metaDataHeader != "" {
+		err := json.Unmarshal([]byte(metaDataHeader), &metaData)
+		if err != nil {
+			log.Errorf("Error unmarshalling metadata header: %v", err)
+			return ProxyRequest{}, err
+		}
+	}
+
+	// change metaDataHeader to JSON string
+	metaDataHeaderB, err := json.Marshal(metaData)
+	if err != nil {
+		log.Errorf("Error marshalling metadata header: %v", err)
+		return ProxyRequest{}, err
+	}
 	// header to map
 	header := make(map[string]string)
 	for k, v := range r.Header {
@@ -88,6 +106,7 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 		RequestBody:      body,
 		Provider:         "openai",
 		IsCached:         isCached,
+		CustomMetaData:   string(metaDataHeaderB),
 	}
 
 	err = pr.SetUserIdentifier(ctx, authDB, apiKey)
