@@ -76,4 +76,7 @@ SELECT * FROM project_users WHERE project_id = $1 AND user_id = $2;
 -- name: GetAllApiKeysByUserId :many
 SELECT  created_at, updated_at, expires_at, name, project_id, user_id FROM nxa_api_key WHERE user_id = $1;
 
+-- name: UpdateUserLastLogin :one
+UPDATE users SET last_login = $1, total_logins = total_logins + 1 WHERE id = $2 RETURNING *;
+
 

@@ -8,6 +8,9 @@ import (
 
 	postgresql_db "github.com/NumexaHQ/captainCache/numexa-common/postgresql/postgresql-db"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -15,6 +18,8 @@ import (
 // todo: use a context
 // todo: use a logger
 // todo: use a config
+// todo: seperate out the queries into a seperate file
+
 func (p *Postgres) Init() error {
 	connStr := "host=nxa-postgres port=5432 user=numexa password=numexa dbname=numexa sslmode=disable"
 	// connStr = "host=localhost port=5432 user=numexa password=numexa dbname=numexa sslmode=disable"
@@ -31,6 +36,20 @@ func (p *Postgres) Init() error {
 
 	p.db = db
 	return nil
+}
+
+// todo: use this function to migrate the database
+func migratePostgres() error {
+	dbURL := "postgres://numexa:numexa@nxa-postgres:5432/numexa?sslmode=disable"
+	// dbURL = "postgres://numexa:numexa@localhost:5432/numexa?sslmode=disable"
+
+	migrationFile := "file:///usr/local/postgresql"
+	m, err := migrate.New(
+		migrationFile, dbURL)
+	if err != nil {
+		return err
+	}
+	return m.Up()
 }
 
 func getPostgresQueries(db *sql.DB) *postgresql_db.Queries {
