@@ -40,15 +40,15 @@ func (c *CustomResponseWriter) Write(b []byte) (int, error) {
 }
 
 type ProxyResponse struct {
-	RequestID          string `json:"request_id"`
-	InitiatedTimestamp int64  `json:"initiated_timestamp"`
-	ResponseTimestamp  int64  `json:"response_timestamp"`
-	ResponseStatusCode uint16 `json:"response_status_code"`
-	ResponseHeaders    string `json:"response_headers"`
-	ResponseBody       string `json:"response_body"`
-	Provider           string `json:"provider"`
-	UserID             int32  `json:"user_id"`
-	ProjectID          int32  `json:"project_id"`
+	RequestID          string    `json:"request_id"`
+	InitiatedTimestamp time.Time `json:"initiated_timestamp"`
+	ResponseTimestamp  time.Time `json:"response_timestamp"`
+	ResponseStatusCode uint16    `json:"response_status_code"`
+	ResponseHeaders    string    `json:"response_headers"`
+	ResponseBody       string    `json:"response_body"`
+	Provider           string    `json:"provider"`
+	UserID             int32     `json:"user_id"`
+	ProjectID          int32     `json:"project_id"`
 }
 
 func (p *ProxyResponse) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB, apiKey string) error {
@@ -132,8 +132,8 @@ func ProxyResponseBuilderForHTTPResponse(ctx context.Context, r *http.Response, 
 	rid := GetRequestID(ctx)
 	pr := ProxyResponse{
 		RequestID:          rid,
-		InitiatedTimestamp: initTime.Unix(),
-		ResponseTimestamp:  responseTime.Unix(),
+		InitiatedTimestamp: initTime,
+		ResponseTimestamp:  responseTime,
 		ResponseStatusCode: uint16(r.StatusCode),
 		ResponseHeaders:    string(hB),
 		ResponseBody:       body,
@@ -242,8 +242,8 @@ func ProxyResponseBuilderForCacheHit(ctx context.Context, jsonString string, aut
 	rid := GetRequestID(ctx)
 	pr := ProxyResponse{
 		RequestID:          rid,
-		InitiatedTimestamp: initTime.Unix(),
-		ResponseTimestamp:  time.Now().Unix(),
+		InitiatedTimestamp: initTime,
+		ResponseTimestamp:  time.Now(),
 		ResponseStatusCode: 200,
 		ResponseHeaders:    "",
 		ResponseBody:       jsonString,

@@ -4,64 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	costcalculation "github.com/NumexaHQ/captainCache/numexa-common/cost-calculation"
 	"github.com/NumexaHQ/monger/model"
 	vibeModel "github.com/NumexaHQ/vibe/model"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const keyLength = 32
-
-func (h *Handler) AuthMiddleware(c *fiber.Ctx) error {
-	tokenString := c.Get("Authorization")
-
-	// Remove the "Bearer " prefix from the token string
-	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-
-	// Parse the token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Check the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(h.JWTSigningKey), nil
-	})
-
-	if err != nil || !token.Valid {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Unauthorized",
-		})
-	}
-
-	// Get the user ID from the token's claims
-	var userID float64
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		if id, exists := claims["user_id"]; exists {
-			userID = id.(float64)
-			c.Locals("user_id", userID) // Set the user ID in locals for other handlers to access
-		}
-		if email, exists := claims["email"]; exists {
-			c.Locals("user_email", email) // Set the user ID in locals for other handlers to access
-		}
-		if name, exists := claims["name"]; exists {
-			c.Locals("user_name", name) // Set the user ID in locals for other handlers to access
-		}
-		if organizationID, exists := claims["organization_id"]; exists {
-			c.Locals("organization_id", organizationID) // Set the user ID in locals for other handlers to access
-		}
-
-	}
-
-	// Check if the token is still valid (not invalidated by logout)
-
-	// Token is valid, proceed to the next handler
-	return c.Next()
-}
 
 func (h *Handler) Pong(c *fiber.Ctx) error {
 	return c.SendString("pong works")
@@ -69,6 +21,10 @@ func (h *Handler) Pong(c *fiber.Ctx) error {
 
 func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 	userID := c.Params("userID")
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
+		return err
+	}
 
 	userIDT, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
@@ -77,10 +33,13 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 
 	var result []model.ProxyRequest
 	var res []vibeModel.AllRequestsTableResponse
-	_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ?", int32(userIDT)).Scan(&result)
+	if to != 0 && from != 0 {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND request_timestamp BETWEEN ? AND ?", int32(userIDT), from, to).Scan(&result)
+	} else {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ?", int32(userIDT)).Scan(&result)
+	}
 
 	for _, v := range result {
-		t := time.Unix(v.RequestTimestamp, 0)
 		var reqBody map[string]interface{}
 		var msgs []interface{}
 		err := json.Unmarshal([]byte(v.RequestBody), &reqBody)
@@ -94,6 +53,7 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 		var cost float64
 		var llmModel string
 		var statusCode int
+		var latency int64
 		// todo: repeating code
 		var presResults []model.ProxyResponse
 		_ = h.ChConfig.DB.Table("proxy_responses").Where("request_id = ?", v.RequestID).Scan(&presResults)
@@ -119,6 +79,7 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 				presResult := presResults[len(presResults)-1]
 				if presResult.ResponseStatusCode == 200 {
 					llmModel = reqBody["model"].(string)
+					latency = presResult.ResponseTimestamp.Sub(presResult.InitiatedTimestamp).Milliseconds()
 					err := json.Unmarshal([]byte(presResult.ResponseBody), &responseBody)
 					if err != nil {
 						fmt.Println("Error parsing JSON:", err)
@@ -133,11 +94,12 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 		res = append(res, vibeModel.AllRequestsTableResponse{
 			ID:             v.RequestID,
 			ProjectID:      v.ProjectID,
-			InitiatedAt:    t.Format(time.UnixDate),
+			InitiatedAt:    v.RequestTimestamp,
 			Model:          llmModel,
 			Prompt:         prompt,
 			StatusCode:     statusCode,
 			Cost:           cost,
+			Latency:        latency,
 			Provider:       v.Provider,
 			IsCached:       v.IsCached,
 			IsCacheHit:     v.IsCacheHit,
@@ -181,52 +143,75 @@ func (h *Handler) GetTotalRequestsCountbyProjectID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(float64)
 	projectID := c.Params("projectID")
 
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
+		return err
+	}
+
 	projectIDT, err := strconv.ParseInt(projectID, 10, 64)
 	if err != nil {
 		return err
 	}
 
 	var result []model.ProxyRequest
-	_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ?", userID, int32(projectIDT)).Scan(&result)
-
+	if to != 0 && from != 0 {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ? AND request_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Scan(&result)
+	} else {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ?", userID, int32(projectIDT)).Scan(&result)
+	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"total_requests": len(result),
 	})
 }
 
 func (h *Handler) ComputeAvgResponseLatencyByProjectID(c *fiber.Ctx) error {
-
 	userID := c.Locals("user_id").(float64)
 	projectID := c.Params("projectID")
+
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
+		return err
+	}
+
 	projectIDT, err := strconv.ParseInt(projectID, 10, 64)
 	if err != nil {
 		return err
 	}
 
 	var responses []model.ProxyResponse
-	_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&responses)
-
-	var totalLatency time.Duration
-	for _, response := range responses {
-		initiatedTime := time.Unix(response.InitiatedTimestamp, 0)
-		responseTime := time.Unix(response.ResponseTimestamp, 0)
-		totalLatency += responseTime.Sub(initiatedTime)
+	if to != 0 && from != 0 {
+		_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? AND response_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Scan(&responses)
+	} else {
+		_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&responses)
 	}
 
-	var avgLatency time.Duration
+	var totalLatency int64
+	var totalOkResponses int64
+
+	for _, response := range responses {
+		// if response code was not 200, skip
+		if response.ResponseStatusCode == 200 {
+			diff := response.ResponseTimestamp.Sub(response.InitiatedTimestamp)
+			// diff to milliseconds
+			totalLatency += diff.Milliseconds()
+			totalOkResponses++
+		}
+	}
+
+	var avgLatency int64
 
 	if len(responses) == 0 {
 		// Handle the case when the responses slice is empty to avoid division by zero.
 		// For example, you can set avgLatency to 0 or return an error message.
 		avgLatency = 0
 	} else {
-		avgLatency = totalLatency / time.Duration(len(responses))
+		avgLatency = totalLatency / totalOkResponses
 	}
 
 	// Create a map to include both the response and the average latency
 	responseData := map[string]interface{}{
-		"avg_latency":     avgLatency.Seconds(),
-		"Total_responses": len(responses), // Converting to seconds for easy representation.
+		"avg_latency":     avgLatency,
+		"total_responses": len(responses), // Converting to seconds for easy representation.
 	}
 
 	return c.Status(fiber.StatusOK).JSON(responseData)
@@ -238,15 +223,12 @@ func (h *Handler) ComputeLatencyByRequestId(c *fiber.Ctx) error {
 	var response model.ProxyResponse
 	_ = h.ChConfig.DB.Table("proxy_responses").Where("request_id = ?", requestID).Scan(&response)
 
-	initiatedTime := time.Unix(response.InitiatedTimestamp, 0)
-	responseTime := time.Unix(response.ResponseTimestamp, 0)
-
 	// Calculate the latency
-	latency := responseTime.Sub(initiatedTime)
+	latency := response.ResponseTimestamp.Sub(response.InitiatedTimestamp).Milliseconds()
 
 	// Create a map to include both the response and the average latency
 	responseData := map[string]interface{}{
-		"latency_id": latency, // Converting to seconds for easy representation.
+		"latency": latency, // Converting to seconds for easy representation.
 	}
 
 	return c.Status(fiber.StatusOK).JSON(responseData)
@@ -260,9 +242,17 @@ func (h *Handler) ComputeAverageTokensByProjectID(c *fiber.Ctx) error {
 		return err
 	}
 
-	var responses []model.ProxyResponse
-	_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&responses)
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
+		return err
+	}
 
+	var responses []model.ProxyResponse
+	if to != 0 && from != 0 {
+		_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? AND response_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Scan(&responses)
+	} else {
+		_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&responses)
+	}
 	var totalPromptTokens int
 	var totalTotalTokens int
 	var totalCompletionTokens int
@@ -335,11 +325,21 @@ func (h *Handler) GetUniqueModelsCountByProjectID(c *fiber.Ctx) error {
 		return err
 	}
 
-	var responses []model.ProxyResponse
-	if err := h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Find(&responses).Error; err != nil {
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
 		return err
 	}
 
+	var responses []model.ProxyResponse
+	if to != 0 && from != 0 {
+		if err := h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? AND response_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Find(&responses).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Find(&responses).Error; err != nil {
+			return err
+		}
+	}
 	// Create a map to count the occurrences of unique model names
 	uniqueModelsCount := make(map[string]int)
 	for _, response := range responses {
@@ -367,4 +367,24 @@ func (h *Handler) GetUniqueModelsCountByProjectID(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(responseData)
+}
+
+func GetTimeFilter(t, f string) (toUnix, fromUnix int64, err error) {
+	if t == "" || f == "" {
+		return toUnix, fromUnix, nil
+	}
+
+	to, err := time.Parse(time.RFC3339, t)
+	if err != nil {
+		return toUnix, fromUnix, err
+	}
+	toUnix = to.Unix()
+
+	from, err := time.Parse(time.RFC3339, f)
+	if err != nil {
+		return toUnix, fromUnix, err
+	}
+	fromUnix = from.Unix()
+
+	return toUnix, fromUnix, nil
 }
