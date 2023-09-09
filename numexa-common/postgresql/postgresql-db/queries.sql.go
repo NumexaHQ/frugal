@@ -126,7 +126,7 @@ func (q *Queries) CreateProjectUser(ctx context.Context, arg CreateProjectUserPa
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, organization_id, email, password, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, organization_id, name, email, password, created_at, updated_at
+RETURNING id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins
 `
 
 type CreateUserParams struct {
@@ -156,6 +156,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastLogin,
+		&i.TotalLogins,
 	)
 	return i, err
 }
@@ -464,7 +466,7 @@ func (q *Queries) GetTokenByProjectId(ctx context.Context, arg GetTokenByProject
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, organization_id, name, email, password, created_at, updated_at FROM users WHERE email = $1
+SELECT id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -478,12 +480,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastLogin,
+		&i.TotalLogins,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, organization_id, name, email, password, created_at, updated_at FROM users WHERE id = $1
+SELECT id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
@@ -497,12 +501,14 @@ func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastLogin,
+		&i.TotalLogins,
 	)
 	return i, err
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, organization_id, name, email, password, created_at, updated_at FROM users WHERE organization_id = $1
+SELECT id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins FROM users WHERE organization_id = $1
 `
 
 func (q *Queries) GetUsers(ctx context.Context, organizationID int32) ([]User, error) {
@@ -522,6 +528,8 @@ func (q *Queries) GetUsers(ctx context.Context, organizationID int32) ([]User, e
 			&i.Password,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LastLogin,
+			&i.TotalLogins,
 		); err != nil {
 			return nil, err
 		}
@@ -537,7 +545,7 @@ func (q *Queries) GetUsers(ctx context.Context, organizationID int32) ([]User, e
 }
 
 const getUsersByProjectId = `-- name: GetUsersByProjectId :many
-SELECT id, organization_id, name, email, password, created_at, updated_at FROM users WHERE id IN (SELECT user_id FROM project_users WHERE project_id = $1)
+SELECT id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins FROM users WHERE id IN (SELECT user_id FROM project_users WHERE project_id = $1)
 `
 
 func (q *Queries) GetUsersByProjectId(ctx context.Context, projectID int32) ([]User, error) {
@@ -557,6 +565,8 @@ func (q *Queries) GetUsersByProjectId(ctx context.Context, projectID int32) ([]U
 			&i.Password,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LastLogin,
+			&i.TotalLogins,
 		); err != nil {
 			return nil, err
 		}
@@ -569,4 +579,30 @@ func (q *Queries) GetUsersByProjectId(ctx context.Context, projectID int32) ([]U
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUserLastLogin = `-- name: UpdateUserLastLogin :one
+UPDATE users SET last_login = $1, total_logins = total_logins + 1 WHERE id = $2 RETURNING id, organization_id, name, email, password, created_at, updated_at, last_login, total_logins
+`
+
+type UpdateUserLastLoginParams struct {
+	LastLogin sql.NullTime `json:"last_login"`
+	ID        int32        `json:"id"`
+}
+
+func (q *Queries) UpdateUserLastLogin(ctx context.Context, arg UpdateUserLastLoginParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserLastLogin, arg.LastLogin, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastLogin,
+		&i.TotalLogins,
+	)
+	return i, err
 }

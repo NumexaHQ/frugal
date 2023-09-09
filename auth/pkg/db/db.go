@@ -34,4 +34,5 @@ type DB interface {
 	GetAPIKeyByNameAndProjectId(ctx context.Context, name string, projectID int32) (postgresql_db.NxaApiKey, error)
 	GetAllApiKeysByUserId(ctx context.Context, userID int32) ([]postgresql_db.GetAllApiKeysByUserIdRow, error)
 	GetProjectsByOrgId(ctx context.Context, orgID int32) ([]postgresql_db.Project, error)
+	UpdateUserLastLogin(ctx context.Context, user postgresql_db.User) error
 }

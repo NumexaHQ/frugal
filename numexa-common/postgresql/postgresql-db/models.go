@@ -49,11 +49,13 @@ type Role struct {
 }
 
 type User struct {
-	ID             int32     `json:"id"`
-	OrganizationID int32     `json:"organization_id"`
-	Name           string    `json:"name"`
-	Email          string    `json:"email"`
-	Password       string    `json:"password"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             int32         `json:"id"`
+	OrganizationID int32         `json:"organization_id"`
+	Name           string        `json:"name"`
+	Email          string        `json:"email"`
+	Password       string        `json:"password"`
+	CreatedAt      time.Time     `json:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at"`
+	LastLogin      sql.NullTime  `json:"last_login"`
+	TotalLogins    sql.NullInt32 `json:"total_logins"`
 }

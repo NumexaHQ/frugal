@@ -33,8 +33,5 @@ echo "clickhouse database url: $clickhouseDatabaseURL"
 
 echo "run database migrations, complete"
 
-echo $JWT_SIGNING_KEY
-
-
 echo "starting numexa auth service..."
 exec "$@"

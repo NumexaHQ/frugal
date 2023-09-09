@@ -283,6 +283,12 @@ func (h *Handler) LoginHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	// update last login
+	err = h.DB.UpdateUserLastLogin(c.Context(), u)
+	if err != nil {
+		log.Errorf("error updating user last login: %v", err)
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"token":      tokenString,
 		"project_id": project[0].ID,
