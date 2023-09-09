@@ -13,19 +13,19 @@ import (
 )
 
 type ProxyRequest struct {
-	RequestID        string `json:"request_id"`
-	RequestTimestamp int64  `json:"request_timestamp"`
-	SourceIp         string `json:"source_ip"`
-	RequestMethod    string `json:"request_method"`
-	RequestUrl       string `json:"request_url"`
-	RequestHeaders   string `json:"request_headers"`
-	RequestBody      string `json:"request_body"`
-	Provider         string `json:"provider"`
-	UserID           int32  `json:"user_id"`
-	ProjectID        int32  `json:"project_id"`
-	IsCached         bool   `json:"is_cached"`
-	IsCacheHit       bool   `json:"is_cache_hit"`
-	CustomMetaData   string `json:"custom_fields"`
+	RequestID        string    `json:"request_id"`
+	RequestTimestamp time.Time `json:"request_timestamp"`
+	SourceIp         string    `json:"source_ip"`
+	RequestMethod    string    `json:"request_method"`
+	RequestUrl       string    `json:"request_url"`
+	RequestHeaders   string    `json:"request_headers"`
+	RequestBody      string    `json:"request_body"`
+	Provider         string    `json:"provider"`
+	UserID           int32     `json:"user_id"`
+	ProjectID        int32     `json:"project_id"`
+	IsCached         bool      `json:"is_cached"`
+	IsCacheHit       bool      `json:"is_cache_hit"`
+	CustomMetaData   string    `json:"custom_fields"`
 }
 
 func (p *ProxyRequest) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB, apiKey string) error {
@@ -98,7 +98,7 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 
 	pr := ProxyRequest{
 		RequestID:        rid,
-		RequestTimestamp: rt.Unix(),
+		RequestTimestamp: rt,
 		SourceIp:         r.RemoteAddr,
 		RequestMethod:    r.Method,
 		RequestUrl:       url,

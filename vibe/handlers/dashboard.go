@@ -20,11 +20,20 @@ func (h *Handler) GetUserRequestsStatsByProjectID(c *fiber.Ctx) error {
 		return err
 	}
 
+	to, from, err := GetTimeFilter(c.Query("to"), c.Query("from"))
+	if err != nil {
+		return err
+	}
+
 	tempStats := make(map[int32]vibeModel.UserUsageStats)
 
 	// get all requests for this project
 	var results []model.ProxyResponse
-	_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ?", userID, int32(projectIDT)).Scan(&results)
+	if to != 0 && from != 0 {
+		h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? AND response_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Scan(&results)
+	} else {
+		h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ?", userID, int32(projectIDT)).Scan(&results)
+	}
 
 	var totalPromptTokens int
 	var totalTotalTokens int
