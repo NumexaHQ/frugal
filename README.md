@@ -6,7 +6,7 @@
 </a>
 
 [![](https://img.shields.io/badge/Visit%20Us-app.numexa.io-brightgreen)](https://app.numexa.io)
-[![](https://img.shields.io/badge/Join%20our%20community-Discord-blue)](https://discord.gg/mVBMKVCv)
+[![](https://img.shields.io/badge/Join%20our%20community-Discord-blue)](https://discord.gg/fj4EufsH)
 [![](https://img.shields.io/badge/View%20Documentation-Docs-yellow)](https://docs.numexa.io/)
 
 ## Introduction
