@@ -121,6 +121,9 @@ export const ListApiKeys = {
   }),
 };
 
+// const fromTimestamp = new Date("2023-09-01T00:00:00").getTime(); // Example "from" timestamp
+// const toTimestamp = new Date("2023-09-10T23:59:59").getTime();
+
 export const ListRequests = {
   state: {
     requests: [],
@@ -132,6 +135,10 @@ export const ListRequests = {
   },
   effects: (dispatch) => ({
     async getProviderRequests(payload, state) {
+      const { projectId, queryparams } = payload; // Destructure "from" and "to" from payload
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
+
       var requestOptions = {
         method: "GET",
         headers: {
@@ -140,11 +147,14 @@ export const ListRequests = {
         },
         redirect: "follow",
       };
+
       try {
+        // Append the query parameters to the URL
         const response = await fetch(
-          `${VIBE_BASE_URL}/mng_request/${payload.projectId}`,
+          `${VIBE_BASE_URL}/mng_request/${projectId}?${qParam.toString()}`,
           requestOptions
         );
+
         const data = await response.json();
 
         dispatch.ListRequests.setRequests(data);
@@ -200,6 +210,10 @@ export const TotalRequests = {
   },
   effects: (dispatch) => ({
     async getTotalRequest(payload, state) {
+      const { queryparams } = payload; // Destructure "from" and "to" from payload
+
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
       var requestOptions = {
         method: "GET",
         headers: {
@@ -210,7 +224,9 @@ export const TotalRequests = {
       };
       try {
         const response = await fetch(
-          `${VIBE_BASE_URL}/total_requests/${payload.projectId}`,
+          `${VIBE_BASE_URL}/total_requests/${
+            payload.projectId
+          }?${qParam.toString()}`,
           requestOptions
         );
         const data = await response.json();
@@ -233,6 +249,10 @@ export const AvgLatency = {
   },
   effects: (dispatch) => ({
     async getAvgLatency(payload, state) {
+      const { queryparams } = payload; // Destructure "from" and "to" from payload
+
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
       var requestOptions = {
         method: "GET",
         headers: {
@@ -243,7 +263,9 @@ export const AvgLatency = {
       };
       try {
         const response = await fetch(
-          `${VIBE_BASE_URL}/avg_latency/${payload.projectId}`,
+          `${VIBE_BASE_URL}/avg_latency/${
+            payload.projectId
+          }?${qParam.toString()}`,
           requestOptions
         );
         const data = await response.json();
@@ -266,6 +288,10 @@ export const AvgTokens = {
   },
   effects: (dispatch) => ({
     async getAvgTokens(payload, state) {
+      const { queryparams } = payload; // Destructure "from" and "to" from payload
+
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
       var requestOptions = {
         method: "GET",
         headers: {
@@ -276,7 +302,9 @@ export const AvgTokens = {
       };
       try {
         const response = await fetch(
-          `${VIBE_BASE_URL}/avg_prompt_tokens/${payload.projectId}`,
+          `${VIBE_BASE_URL}/avg_prompt_tokens/${
+            payload.projectId
+          }?${qParam.toString()}`,
           requestOptions
         );
         const data = await response.json();
@@ -299,6 +327,10 @@ export const ModelDistribution = {
   },
   effects: (dispatch) => ({
     async getModelDistribution(payload, state) {
+      const { queryparams } = payload; // Destructure "from" and "to" from payload
+
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
       var requestOptions = {
         method: "GET",
         headers: {
@@ -309,7 +341,9 @@ export const ModelDistribution = {
       };
       try {
         const response = await fetch(
-          `${VIBE_BASE_URL}/unique_models/${payload.projectId}`,
+          `${VIBE_BASE_URL}/unique_models/${
+            payload.projectId
+          }?${qParam.toString()}`,
           requestOptions
         );
         const data = await response.json();
@@ -332,6 +366,10 @@ export const UsersUsageStat = {
   },
   effects: (dispatch) => ({
     async getUsersUsageStat(payload, state) {
+      const { queryparams } = payload; // Destructure "from" and "to" from payload
+
+      // Define your query parameters
+      const qParam = new URLSearchParams(queryparams);
       var requestOptions = {
         method: "GET",
         headers: {
@@ -342,7 +380,9 @@ export const UsersUsageStat = {
       };
       try {
         const response = await fetch(
-          `${VIBE_BASE_URL}/user_requests_stats/${payload.projectId}`,
+          `${VIBE_BASE_URL}/user_requests_stats/${
+            payload.projectId
+          }?${qParam.toString()}`,
           requestOptions
         );
         const data = await response.json();
