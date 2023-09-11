@@ -48,12 +48,8 @@ function UserReports(props) {
 
   const handleTimeQueryParams = (timeRange) => {
     const queryparams = generateTimeParams(timeRange);
-    console.log(timeRange);
     setQueryParams(queryparams);
   };
-
-  console.log(queryparams);
-
   useEffect(() => {
     props.getTotalRequests({ projectId });
     props.getAvgLatency({ projectId });
