@@ -121,9 +121,6 @@ export const ListApiKeys = {
   }),
 };
 
-// const fromTimestamp = new Date("2023-09-01T00:00:00").getTime(); // Example "from" timestamp
-// const toTimestamp = new Date("2023-09-10T23:59:59").getTime();
-
 export const ListRequests = {
   state: {
     requests: [],
