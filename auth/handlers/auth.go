@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	validate_user "github.com/NumexaHQ/captainCache/model"
 	postgresql_db "github.com/NumexaHQ/captainCache/numexa-common/postgresql/postgresql-db"
 	"github.com/NumexaHQ/captainCache/pkg/utils"
 	"github.com/dgrijalva/jwt-go"
@@ -139,6 +140,13 @@ func (h *Handler) RegisterHandler(c *fiber.Ctx) error {
 	var user postgresql_db.User
 	var organization postgresql_db.Organization
 	var project postgresql_db.Project
+	var validateuser validate_user.User
+
+	if err := h.Validator.Struct(validateuser); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Empty email or passowrd cannot be empty",
+		})
+	}
 
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
