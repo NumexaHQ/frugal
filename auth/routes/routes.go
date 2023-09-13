@@ -4,14 +4,18 @@ package routes
 import (
 	"github.com/NumexaHQ/captainCache/handlers"
 	"github.com/NumexaHQ/captainCache/pkg/db"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 // Setup initializes the routes
 func Setup(app *fiber.App, db db.DB, jwtSigningKey string) {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
 	nxHandler := &handlers.Handler{
 		DB:            db,
 		JWTSigningKey: jwtSigningKey,
+		Validator:     validate,
 	}
 	// Register and login handlers
 	app.Post("/register", nxHandler.RegisterHandler)
