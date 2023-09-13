@@ -406,7 +406,7 @@ export const GetLatency = {
 
       fetch(`${VIBE_BASE_URL}/latency/${payload.requestId}`, requestOptions)
         .then((response) => response.json())
-        .then((data) => dispatch.GetLatency.setLatency(data.latency_id));
+        .then((data) => dispatch.GetLatency.setLatency(data.latency));
     },
   }),
 };
