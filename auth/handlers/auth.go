@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	validate_user "github.com/NumexaHQ/captainCache/model"
+	"github.com/NumexaHQ/captainCache/model"
 	postgresql_db "github.com/NumexaHQ/captainCache/numexa-common/postgresql/postgresql-db"
 	"github.com/NumexaHQ/captainCache/pkg/utils"
 	"github.com/dgrijalva/jwt-go"
@@ -137,21 +137,27 @@ func (h *Handler) CreateApiKey(c *fiber.Ctx) error {
 }
 
 func (h *Handler) RegisterHandler(c *fiber.Ctx) error {
-	var user postgresql_db.User
 	var organization postgresql_db.Organization
 	var project postgresql_db.Project
-	var validateuser validate_user.User
+	var userReq model.RegisterUserRequest
 
-	if err := h.Validator.Struct(validateuser); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Empty email or passowrd cannot be empty",
-		})
-	}
-
-	if err := c.BodyParser(&user); err != nil {
+	if err := c.BodyParser(&userReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid request body",
 		})
+	}
+
+	if err := h.Validator.Struct(userReq); err != nil {
+		log.Debugf("error validating user: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	user := postgresql_db.User{
+		Name:     userReq.Name,
+		Email:    userReq.Email,
+		Password: userReq.Password,
 	}
 
 	u, err := h.DB.GetUserByEmail(c.Context(), user.Email)
@@ -260,7 +266,7 @@ func (h *Handler) LoginHandler(c *fiber.Ctx) error {
 	u, err := h.DB.GetUserByEmail(c.Context(), user.Email)
 	if err != nil {
 		log.Errorf("error getting user by email: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Invalid username or password",
 		})
 	}
