@@ -94,6 +94,11 @@ export const columnsDataComplex = [
 
 export const requestDataColumn = [
   {
+    Header: "Action",
+    accessor: "action",
+  },
+
+  {
     Header: "ID",
     accessor: (row) => {
       // add middle ellipsis
@@ -167,5 +172,49 @@ export const apiKeycolumn = [
   {
     Header: "CREATED AT",
     accessor: "created_at",
+  },
+];
+
+export const PromptManagementColumn = [
+  {
+    Header: "Model",
+    accessor: "model",
+  },
+  {
+    Header: "Prompt",
+    accessor: "prompt",
+  },
+  {
+    Header: "Score",
+    accessor: (row) => {
+      return (
+        <Badge variant="outline" colorScheme="green">
+          {row.score}
+        </Badge>
+      );
+    },
+  },
+  {
+    Header: "Comments",
+    accessor: "comment",
+  },
+  {
+    Header: "Tags",
+    accessor: (row) => {
+      if (row.custom_metadata !== "") {
+        return JSON.parse(row.custom_metadata).map((tag) => {
+          return (
+            <Badge variant="solid" colorScheme="purple" mr="2" mt="1">
+              {tag}
+            </Badge>
+          );
+        });
+      }
+      return (
+        <Badge variant="solid" colorScheme="red">
+          {"No tags"}
+        </Badge>
+      );
+    },
   },
 ];

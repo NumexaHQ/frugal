@@ -388,3 +388,55 @@ func GetTimeFilter(t, f string) (toUnix, fromUnix int64, err error) {
 
 	return toUnix, fromUnix, nil
 }
+
+// func to add the the requests to the prompt directory table
+func (h *Handler) AddRequestToPromptDirectory(c *fiber.Ctx) error {
+	var promptDirectory model.PromptDirectory
+	// set user id
+	userID := c.Locals("user_id").(float64)
+	promptDirectory.UserID = int32(userID)
+
+	promptDirectory.Latency = int64(promptDirectory.Latency)
+
+	// set project id
+	if err := c.BodyParser(&promptDirectory); err != nil {
+		return err
+	}
+	if err := h.ChConfig.DB.Table("prompt_directories").Create(&promptDirectory).Error; err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Request added to prompt directory successfully",
+	})
+}
+
+// func to get the requests from the prompt directory table by userid & project_id
+
+func (h *Handler) GetRequestFromPromptDirectory(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(float64)
+	projectID := c.Params("projectID")
+	projectIDT, err := strconv.ParseInt(projectID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var promptDirectory []model.PromptDirectory
+	if err := h.ChConfig.DB.Table("prompt_directories").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Find(&promptDirectory).Error; err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(promptDirectory)
+}
+
+// func to edit field of a request in prompt directory table by request_id
+func (h *Handler) EditFieldOfRequestInPromptDirectory(c *fiber.Ctx) error {
+	var promptDirectory model.PromptDirectory
+	if err := c.BodyParser(&promptDirectory); err != nil {
+		return err
+	}
+	if err := h.ChConfig.DB.Table("prompt_directories").Where("request_id = ?", promptDirectory.RequestID).Updates(&promptDirectory).Error; err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Field of request updated successfully",
+	})
+}

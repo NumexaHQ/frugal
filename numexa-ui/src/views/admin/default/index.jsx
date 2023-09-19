@@ -162,7 +162,7 @@ function UserReports(props) {
           />
           <MiniStatistics
             name="Average Latency/ request"
-            value={`${avgLatency.toFixed(2)} seconds`}
+            value={`${avgLatency.toFixed(2)} miliseconds`}
           />
           <MiniStatistics
             name="Average Prompt Tokens/ request"
