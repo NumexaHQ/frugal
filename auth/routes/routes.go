@@ -28,4 +28,8 @@ func Setup(app *fiber.App, db db.DB, jwtSigningKey string) {
 	//GenerateApiKey
 	app.Post("/generate_api_key", nxHandler.AuthMiddleware, nxHandler.CreateApiKey)
 	app.Get("/get_api_key", nxHandler.AuthMiddleware, nxHandler.GetAPIkeyByUserId)
+
+	// keymgmt
+	app.Post("/add_provider_keys", nxHandler.AuthMiddleware, nxHandler.AddProviderKeys)
+	app.Get("/get_provider_keys/:project_id", nxHandler.AuthMiddleware, nxHandler.GetProviderKeys)
 }

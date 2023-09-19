@@ -8,13 +8,14 @@ package postgresql_db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
 const createApiKey = `-- name: CreateApiKey :one
 INSERT INTO nxa_api_key (name, api_key, user_id, project_id, created_at, updated_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, name, api_key, user_id, project_id, created_at, updated_at, expires_at
+RETURNING id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id
 `
 
 type CreateApiKeyParams struct {
@@ -47,6 +48,7 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Nxa
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiresAt,
+		&i.NxaApiKeyPropertyID,
 	)
 	return i, err
 }
@@ -123,6 +125,117 @@ func (q *Queries) CreateProjectUser(ctx context.Context, arg CreateProjectUserPa
 	return i, err
 }
 
+const createProviderKey = `-- name: CreateProviderKey :one
+INSERT INTO provider_keys (name, key_uuid, provider, creator_id, organization_id, project_id, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at
+`
+
+type CreateProviderKeyParams struct {
+	Name           string    `json:"name"`
+	KeyUuid        string    `json:"key_uuid"`
+	Provider       string    `json:"provider"`
+	CreatorID      int32     `json:"creator_id"`
+	OrganizationID int32     `json:"organization_id"`
+	ProjectID      int32     `json:"project_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+func (q *Queries) CreateProviderKey(ctx context.Context, arg CreateProviderKeyParams) (ProviderKey, error) {
+	row := q.db.QueryRowContext(ctx, createProviderKey,
+		arg.Name,
+		arg.KeyUuid,
+		arg.Provider,
+		arg.CreatorID,
+		arg.OrganizationID,
+		arg.ProjectID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i ProviderKey
+	err := row.Scan(
+		&i.ID,
+		&i.KeyUuid,
+		&i.Name,
+		&i.Provider,
+		&i.CreatorID,
+		&i.OrganizationID,
+		&i.ProjectID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createProviderSecret = `-- name: CreateProviderSecret :one
+INSERT INTO provider_secrets (provider_key_id, type, key, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, provider_key_id, type, key, created_at, updated_at
+`
+
+type CreateProviderSecretParams struct {
+	ProviderKeyID int32     `json:"provider_key_id"`
+	Type          string    `json:"type"`
+	Key           string    `json:"key"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+func (q *Queries) CreateProviderSecret(ctx context.Context, arg CreateProviderSecretParams) (ProviderSecret, error) {
+	row := q.db.QueryRowContext(ctx, createProviderSecret,
+		arg.ProviderKeyID,
+		arg.Type,
+		arg.Key,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i ProviderSecret
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderKeyID,
+		&i.Type,
+		&i.Key,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createSetting = `-- name: CreateSetting :one
+INSERT INTO setting (key, value, visible, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, key, value, visible, created_at, updated_at
+`
+
+type CreateSettingParams struct {
+	Key       string          `json:"key"`
+	Value     json.RawMessage `json:"value"`
+	Visible   bool            `json:"visible"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
+func (q *Queries) CreateSetting(ctx context.Context, arg CreateSettingParams) (Setting, error) {
+	row := q.db.QueryRowContext(ctx, createSetting,
+		arg.Key,
+		arg.Value,
+		arg.Visible,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i Setting
+	err := row.Scan(
+		&i.ID,
+		&i.Key,
+		&i.Value,
+		&i.Visible,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, organization_id, email, password, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -163,7 +276,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getAPIKeyByNameAndProjectId = `-- name: GetAPIKeyByNameAndProjectId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at FROM nxa_api_key WHERE name = $1 AND project_id = $2
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE name = $1 AND project_id = $2
 `
 
 type GetAPIKeyByNameAndProjectIdParams struct {
@@ -183,12 +296,13 @@ func (q *Queries) GetAPIKeyByNameAndProjectId(ctx context.Context, arg GetAPIKey
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiresAt,
+		&i.NxaApiKeyPropertyID,
 	)
 	return i, err
 }
 
 const getAPIkeyByApiKey = `-- name: GetAPIkeyByApiKey :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at FROM nxa_api_key WHERE api_key = $1
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE api_key = $1
 `
 
 func (q *Queries) GetAPIkeyByApiKey(ctx context.Context, apiKey string) (NxaApiKey, error) {
@@ -203,12 +317,13 @@ func (q *Queries) GetAPIkeyByApiKey(ctx context.Context, apiKey string) (NxaApiK
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiresAt,
+		&i.NxaApiKeyPropertyID,
 	)
 	return i, err
 }
 
 const getAPIkeyByUserId = `-- name: GetAPIkeyByUserId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at FROM nxa_api_key WHERE user_id = $1
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE user_id = $1
 `
 
 func (q *Queries) GetAPIkeyByUserId(ctx context.Context, userID int32) (NxaApiKey, error) {
@@ -223,6 +338,7 @@ func (q *Queries) GetAPIkeyByUserId(ctx context.Context, userID int32) (NxaApiKe
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiresAt,
+		&i.NxaApiKeyPropertyID,
 	)
 	return i, err
 }
@@ -440,8 +556,201 @@ func (q *Queries) GetProjects(ctx context.Context, organizationID int32) ([]Proj
 	return items, nil
 }
 
+const getProviderKey = `-- name: GetProviderKey :one
+SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE id = $1
+`
+
+func (q *Queries) GetProviderKey(ctx context.Context, id int32) (ProviderKey, error) {
+	row := q.db.QueryRowContext(ctx, getProviderKey, id)
+	var i ProviderKey
+	err := row.Scan(
+		&i.ID,
+		&i.KeyUuid,
+		&i.Name,
+		&i.Provider,
+		&i.CreatorID,
+		&i.OrganizationID,
+		&i.ProjectID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProviderKeyByName = `-- name: GetProviderKeyByName :one
+SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE name = $1
+`
+
+func (q *Queries) GetProviderKeyByName(ctx context.Context, name string) (ProviderKey, error) {
+	row := q.db.QueryRowContext(ctx, getProviderKeyByName, name)
+	var i ProviderKey
+	err := row.Scan(
+		&i.ID,
+		&i.KeyUuid,
+		&i.Name,
+		&i.Provider,
+		&i.CreatorID,
+		&i.OrganizationID,
+		&i.ProjectID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProviderKeyByUUID = `-- name: GetProviderKeyByUUID :one
+SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE key_uuid = $1
+`
+
+func (q *Queries) GetProviderKeyByUUID(ctx context.Context, keyUuid string) (ProviderKey, error) {
+	row := q.db.QueryRowContext(ctx, getProviderKeyByUUID, keyUuid)
+	var i ProviderKey
+	err := row.Scan(
+		&i.ID,
+		&i.KeyUuid,
+		&i.Name,
+		&i.Provider,
+		&i.CreatorID,
+		&i.OrganizationID,
+		&i.ProjectID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProviderKeysByProjectID = `-- name: GetProviderKeysByProjectID :many
+SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE project_id = $1
+`
+
+func (q *Queries) GetProviderKeysByProjectID(ctx context.Context, projectID int32) ([]ProviderKey, error) {
+	rows, err := q.db.QueryContext(ctx, getProviderKeysByProjectID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProviderKey
+	for rows.Next() {
+		var i ProviderKey
+		if err := rows.Scan(
+			&i.ID,
+			&i.KeyUuid,
+			&i.Name,
+			&i.Provider,
+			&i.CreatorID,
+			&i.OrganizationID,
+			&i.ProjectID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProviderSecret = `-- name: GetProviderSecret :one
+SELECT id, provider_key_id, type, key, created_at, updated_at FROM provider_secrets WHERE id = $1
+`
+
+func (q *Queries) GetProviderSecret(ctx context.Context, id int32) (ProviderSecret, error) {
+	row := q.db.QueryRowContext(ctx, getProviderSecret, id)
+	var i ProviderSecret
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderKeyID,
+		&i.Type,
+		&i.Key,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProviderSecretByProviderKeyIDAndType = `-- name: GetProviderSecretByProviderKeyIDAndType :one
+SELECT id, provider_key_id, type, key, created_at, updated_at FROM provider_secrets WHERE provider_key_id = $1 AND type = $2
+`
+
+type GetProviderSecretByProviderKeyIDAndTypeParams struct {
+	ProviderKeyID int32  `json:"provider_key_id"`
+	Type          string `json:"type"`
+}
+
+func (q *Queries) GetProviderSecretByProviderKeyIDAndType(ctx context.Context, arg GetProviderSecretByProviderKeyIDAndTypeParams) (ProviderSecret, error) {
+	row := q.db.QueryRowContext(ctx, getProviderSecretByProviderKeyIDAndType, arg.ProviderKeyID, arg.Type)
+	var i ProviderSecret
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderKeyID,
+		&i.Type,
+		&i.Key,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProviderSecretsByProviderKeyID = `-- name: GetProviderSecretsByProviderKeyID :many
+SELECT id, provider_key_id, type, key, created_at, updated_at FROM provider_secrets WHERE provider_key_id = $1
+`
+
+func (q *Queries) GetProviderSecretsByProviderKeyID(ctx context.Context, providerKeyID int32) ([]ProviderSecret, error) {
+	rows, err := q.db.QueryContext(ctx, getProviderSecretsByProviderKeyID, providerKeyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProviderSecret
+	for rows.Next() {
+		var i ProviderSecret
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProviderKeyID,
+			&i.Type,
+			&i.Key,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSetting = `-- name: GetSetting :one
+SELECT id, key, value, visible, created_at, updated_at FROM setting WHERE key = $1
+`
+
+func (q *Queries) GetSetting(ctx context.Context, key string) (Setting, error) {
+	row := q.db.QueryRowContext(ctx, getSetting, key)
+	var i Setting
+	err := row.Scan(
+		&i.ID,
+		&i.Key,
+		&i.Value,
+		&i.Visible,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getTokenByProjectId = `-- name: GetTokenByProjectId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at FROM nxa_api_key WHERE project_id = $1 AND api_key = $2
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE project_id = $1 AND api_key = $2
 `
 
 type GetTokenByProjectIdParams struct {
@@ -461,6 +770,7 @@ func (q *Queries) GetTokenByProjectId(ctx context.Context, arg GetTokenByProject
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ExpiresAt,
+		&i.NxaApiKeyPropertyID,
 	)
 	return i, err
 }

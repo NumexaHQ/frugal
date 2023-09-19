@@ -35,4 +35,11 @@ type DB interface {
 	GetAllApiKeysByUserId(ctx context.Context, userID int32) ([]postgresql_db.GetAllApiKeysByUserIdRow, error)
 	GetProjectsByOrgId(ctx context.Context, orgID int32) ([]postgresql_db.Project, error)
 	UpdateUserLastLogin(ctx context.Context, user postgresql_db.User) error
+	AddProviderKeys(ctx context.Context, pk postgresql_db.CreateProviderKeyParams) (postgresql_db.ProviderKey, error)
+	AddProviderSecrets(ctx context.Context, ps postgresql_db.CreateProviderSecretParams) (postgresql_db.ProviderSecret, error)
+	GetProviderSecretByProviderId(ctx context.Context, id int32) ([]postgresql_db.ProviderSecret, error)
+	GetProviderKeyByName(ctx context.Context, name string) (postgresql_db.ProviderKey, error)
+	GetProviderKeysByProjectId(ctx context.Context, projectID int32) ([]postgresql_db.ProviderKey, error)
+	CreateSetting(ctx context.Context, setting postgresql_db.CreateSettingParams) (postgresql_db.Setting, error)
+	GetSetting(ctx context.Context, key string) (postgresql_db.Setting, error)
 }

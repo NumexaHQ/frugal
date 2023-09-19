@@ -6,18 +6,32 @@ package postgresql_db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
 type NxaApiKey struct {
-	ID        int32     `json:"id"`
-	Name      string    `json:"name"`
-	ApiKey    string    `json:"api_key"`
-	UserID    int32     `json:"user_id"`
-	ProjectID int32     `json:"project_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ID                  int32         `json:"id"`
+	Name                string        `json:"name"`
+	ApiKey              string        `json:"api_key"`
+	UserID              int32         `json:"user_id"`
+	ProjectID           int32         `json:"project_id"`
+	CreatedAt           time.Time     `json:"created_at"`
+	UpdatedAt           time.Time     `json:"updated_at"`
+	ExpiresAt           time.Time     `json:"expires_at"`
+	NxaApiKeyPropertyID sql.NullInt32 `json:"nxa_api_key_property_id"`
+}
+
+type NxaApiKeyProperty struct {
+	ID               int32     `json:"id"`
+	RateLimit        int32     `json:"rate_limit"`
+	RateLimitPeriod  string    `json:"rate_limit_period"`
+	EnforceCaching   bool      `json:"enforce_caching"`
+	OverallCostLimit int32     `json:"overall_cost_limit"`
+	AlertOnThreshold int32     `json:"alert_on_threshold"`
+	ExpiresAt        time.Time `json:"expires_at"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type Organization struct {
@@ -41,11 +55,41 @@ type ProjectUser struct {
 	RoleID    int32 `json:"role_id"`
 }
 
+type ProviderKey struct {
+	ID             int32     `json:"id"`
+	KeyUuid        string    `json:"key_uuid"`
+	Name           string    `json:"name"`
+	Provider       string    `json:"provider"`
+	CreatorID      int32     `json:"creator_id"`
+	OrganizationID int32     `json:"organization_id"`
+	ProjectID      int32     `json:"project_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type ProviderSecret struct {
+	ID            int32     `json:"id"`
+	ProviderKeyID int32     `json:"provider_key_id"`
+	Type          string    `json:"type"`
+	Key           string    `json:"key"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
 type Role struct {
 	ID        int32     `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Setting struct {
+	ID        int32           `json:"id"`
+	Key       string          `json:"key"`
+	Value     json.RawMessage `json:"value"`
+	Visible   bool            `json:"visible"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 type User struct {

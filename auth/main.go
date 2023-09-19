@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"os"
 
+	"github.com/NumexaHQ/captainCache/model"
 	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
 	nxdb "github.com/NumexaHQ/captainCache/pkg/db"
 	"github.com/NumexaHQ/captainCache/routes"
@@ -36,7 +38,13 @@ func main() {
 
 	err := db.Init()
 	if err != nil {
-		log.Fatal("Failed to initialize database")
+		log.Fatal("Failed to initialize database: ", err)
+	}
+
+	// init AES setting
+	err = model.InitializeAESSetting(context.Background(), db)
+	if err != nil {
+		log.Fatal("Failed to initialize AES setting: ", err)
 	}
 
 	// Create a new Fiber app

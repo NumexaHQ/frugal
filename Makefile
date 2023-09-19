@@ -13,5 +13,5 @@ up:
 	docker-compose up -d
 
 all: auth monger vibe
-.PHONY: auth monger vibe up
+.PHONY: all auth monger vibe up
 

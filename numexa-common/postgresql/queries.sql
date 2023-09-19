@@ -79,4 +79,46 @@ SELECT  created_at, updated_at, expires_at, name, project_id, user_id FROM nxa_a
 -- name: UpdateUserLastLogin :one
 UPDATE users SET last_login = $1, total_logins = total_logins + 1 WHERE id = $2 RETURNING *;
 
+-- name: CreateProviderKey :one
+INSERT INTO provider_keys (name, key_uuid, provider, creator_id, organization_id, project_id, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING *;
+
+-- name: CreateProviderSecret :one
+INSERT INTO provider_secrets (provider_key_id, type, key, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: GetProviderKey :one
+SELECT * FROM provider_keys WHERE id = $1;
+
+-- name: GetProviderKeyByUUID :one
+SELECT * FROM provider_keys WHERE key_uuid = $1;
+
+-- name: GetProviderKeyByName :one
+SELECT * FROM provider_keys WHERE name = $1;
+
+-- name: GetProviderKeysByProjectID :many
+SELECT * FROM provider_keys WHERE project_id = $1;
+
+-- name: GetProviderSecret :one 
+SELECT * FROM provider_secrets WHERE id = $1;
+
+-- name: GetProviderSecretsByProviderKeyID :many
+SELECT * FROM provider_secrets WHERE provider_key_id = $1;
+
+-- name: GetProviderSecretsByProviderKeyID :many
+SELECT * FROM provider_secrets WHERE provider_key_id = $1; 
+
+-- name: GetProviderSecretByProviderKeyIDAndType :one
+SELECT * FROM provider_secrets WHERE provider_key_id = $1 AND type = $2;
+
+-- name: CreateSetting :one
+INSERT INTO setting (key, value, visible, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: GetSetting :one
+SELECT * FROM setting WHERE key = $1;
+
 
