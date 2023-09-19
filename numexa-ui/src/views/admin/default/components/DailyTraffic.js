@@ -24,13 +24,6 @@ export default function DailyTraffic(props) {
     }
   }, [props.xaxisCategories]);
 
-  const barChartDataDailyTraffic = [
-    {
-      name: "Daily requests",
-      data: [20, 30, 40, 20, 45, 50, 30],
-    },
-  ];
-
   const barChartOptionsDailyTraffic = {
     chart: {
       toolbar: {
@@ -40,12 +33,10 @@ export default function DailyTraffic(props) {
     tooltip: {
       style: {
         fontSize: "12px",
-        fontFamily: undefined,
       },
       onDatasetHover: {
         style: {
           fontSize: "12px",
-          fontFamily: undefined,
         },
       },
       theme: "dark",
