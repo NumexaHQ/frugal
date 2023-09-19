@@ -447,3 +447,105 @@ export const GetLatency = {
     },
   }),
 };
+
+export const AddtoPromptDirectory = {
+  state: {
+    promptDirectory: [],
+  },
+  reducers: {
+    setPromptDirectory(state, promptDirectory) {
+      return { ...state, promptDirectory };
+    },
+  },
+  effects: (dispatch) => ({
+    async addtoPromptDirectory(payload, state) {
+      var requestOptions = {
+        method: "POST",
+        headers: {
+          Authorization: getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...payload.payloadObj,
+          latency: parseInt(payload.payloadObj.latency, 10),
+        }),
+        redirect: "follow",
+      };
+
+      fetch(`${VIBE_BASE_URL}/add_prompt_directory`, requestOptions)
+        .then((response) => response.json())
+        .then((data) => dispatch.AddtoPromptDirectory.setPromptDirectory(data));
+    },
+  }),
+};
+
+export const ListPromptDirectory = {
+  state: {
+    promptDirectory: [],
+  },
+  reducers: {
+    setPromptDirectory(state, promptDirectory) {
+      return { ...state, promptDirectory };
+    },
+  },
+  effects: (dispatch) => ({
+    async listPromptDirectory(payload, state) {
+      var requestOptions = {
+        method: "GET",
+        headers: {
+          Authorization: getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+        redirect: "follow",
+      };
+
+      fetch(
+        `${VIBE_BASE_URL}/prompt_directory/${payload.projectId}`,
+        requestOptions
+      )
+        .then((response) => response.json())
+        .then((data) => dispatch.ListPromptDirectory.setPromptDirectory(data));
+    },
+  }),
+};
+
+export const UpdatePromptDirectory = {
+  state: {
+    promptDirectory: [],
+  },
+  reducers: {
+    setPromptDirectory(state, promptDirectory) {
+      return { ...state, promptDirectory };
+    },
+  },
+  effects: (dispatch) => ({
+    async updatePromptDirectory(payload, state) {
+      var requestOptions = {
+        method: "PUT",
+        headers: {
+          Authorization: getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          project_id: payload.projectId,
+          prompt: payload.prompt,
+          model: payload.model,
+          name: payload.name,
+          description: payload.description,
+          tags: payload.tags,
+          metadata: payload.metadata,
+        }),
+        redirect: "follow",
+      };
+
+      fetch(
+        `${VIBE_BASE_URL}/update_prompt_directory/${payload.promptId}`,
+        requestOptions
+      )
+        .then((response) => response.json())
+        .then((data) =>
+          dispatch.UpdatePromptDirectory.setPromptDirectory(data)
+        );
+    },
+  }),
+};

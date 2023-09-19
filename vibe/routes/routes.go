@@ -29,4 +29,7 @@ func Setup(app *fiber.App, chConfig nxClickhouse.ClickhouseConfig, authdb nxAuth
 	app.Get("/avg_prompt_tokens/:projectID", nxHandler.AuthMiddleware, nxHandler.ComputeAverageTokensByProjectID)
 	app.Get("/unique_models/:projectID", nxHandler.AuthMiddleware, nxHandler.GetUniqueModelsCountByProjectID)
 	app.Get("/user_requests_stats/:projectID", nxHandler.AuthMiddleware, nxHandler.GetUserRequestsStatsByProjectID)
+	app.Post("/add_prompt_directory", nxHandler.AuthMiddleware, nxHandler.AddRequestToPromptDirectory)
+	app.Get("/prompt_directory/:projectID", nxHandler.AuthMiddleware, nxHandler.GetRequestFromPromptDirectory)
+	app.Put("/update_prompt_directory", nxHandler.AuthMiddleware, nxHandler.EditFieldOfRequestInPromptDirectory)
 }

@@ -11,8 +11,8 @@ function SidebarContent(props) {
   const { routes } = props;
   // SIDEBAR
 
-  const firstStackRoutes = routes.slice(0, 4);
-  const secondStackRoutes = routes.slice(4, 10);
+  const firstStackRoutes = routes.slice(0, 5);
+  const secondStackRoutes = routes.slice(5, 10);
   return (
     <Flex
       direction="column"

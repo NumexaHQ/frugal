@@ -3,6 +3,7 @@ import {
   MdAddAlert,
   MdCached,
   MdDashboard,
+  MdFolder,
   MdKey,
   MdPerson,
   MdTableChart,
@@ -15,6 +16,7 @@ import DataTables from "views/admin/dataTables";
 import MainDashboard from "views/admin/default";
 import ApiKeys from "views/admin/keys";
 import Profile from "views/admin/profile";
+import PromptManagement from "views/admin/prompt_directory";
 
 export const routes = [
   {
@@ -32,7 +34,7 @@ export const routes = [
     component: Notifications,
   },
   {
-    name: "Request Tables",
+    name: "Traces",
     layout: "/admin",
     icon: <Icon as={MdTableChart} width="20px" height="20px" color="inherit" />,
     path: "/data-tables",
@@ -46,6 +48,13 @@ export const routes = [
     component: CachePolicies,
   },
 
+  {
+    name: "Prompt Evaluation",
+    layout: "/admin",
+    icon: <Icon as={MdFolder} width="20px" height="20px" color="inherit" />,
+    path: "/prompt-directory",
+    component: PromptManagement,
+  },
   {
     name: "API Keys",
     layout: "/admin",

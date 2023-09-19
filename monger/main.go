@@ -63,6 +63,7 @@ func main() {
 
 	chConfig.DB.AutoMigrate(&model.ProxyRequest{})
 	chConfig.DB.AutoMigrate(&model.ProxyResponse{})
+	chConfig.DB.AutoMigrate(&model.PromptDirectory{})
 
 	// setup database connection to postgres
 	psqldb := nxAuthDB.New(commonConstants.DBPostgres)
