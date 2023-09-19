@@ -89,9 +89,6 @@ function UserReports(props) {
   }, [realTimeMetrics]);
 
   const requestsPerDay = {};
-
-  console.log(requests);
-
   requests.forEach((item) => {
     // Extract the day from the 'initiated_at' timestamp (e.g., '2023-08-31')
     const day = item.initiated_at.split("T")[0];
@@ -103,12 +100,6 @@ function UserReports(props) {
       requestsPerDay[day] = 1;
     }
   });
-
-  // Create an array of objects suitable for chart data
-  // const chartData = Object.entries(requestsPerDay).map(([day, count]) => ({
-  //   x: day, // Day as x-axis category
-  //   y: count, // Request count as y-axis data point
-  // }));
 
   const chartData = Object.entries(requestsPerDay).map(([day, count]) => count);
 
