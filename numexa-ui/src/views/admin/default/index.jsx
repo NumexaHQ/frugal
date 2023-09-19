@@ -17,6 +17,8 @@ import { MdCheckCircleOutline, MdHighlightOff } from "react-icons/md";
 import { generateTimeParams } from "utils/utils";
 import ComplexTable from "views/admin/default/components/ComplexTable";
 
+import DailyTraffic from "./components/DailyTraffic";
+
 import {
   columnsModelData,
   columnsUsersUsageStats,
@@ -40,7 +42,7 @@ function IndicatorDot({ isActive }) {
 
 function UserReports(props) {
   // Chakra Color Mode
-  const { totalRequests, projectId, avgLatency, avgTokens } = props;
+  const { totalRequests, projectId, avgLatency, avgTokens, requests } = props;
 
   const [realTimeMetrics, setRealTimeMetrics] = useState(false);
 
@@ -56,6 +58,7 @@ function UserReports(props) {
     props.getAvgTokens({ projectId });
     props.geModels({ projectId });
     props.getUsersUsageStat({ projectId });
+    props.getRequests({ projectId });
   }, []);
 
   useEffect(() => {
@@ -64,6 +67,7 @@ function UserReports(props) {
     props.getAvgTokens({ projectId, queryparams });
     props.geModels({ projectId, queryparams });
     props.getUsersUsageStat({ projectId, queryparams });
+    props.getRequests({ projectId, queryparams });
   }, [queryparams]);
 
   useEffect(() => {
@@ -84,6 +88,31 @@ function UserReports(props) {
     }
   }, [realTimeMetrics]);
 
+  const requestsPerDay = {};
+  requests.forEach((item) => {
+    // Extract the day from the 'initiated_at' timestamp (e.g., '2023-08-31')
+    const day = item.initiated_at.split("T")[0];
+
+    // Increment the count for the day or initialize it to 1 if it doesn't exist
+    if (requestsPerDay[day]) {
+      requestsPerDay[day]++;
+    } else {
+      requestsPerDay[day] = 1;
+    }
+  });
+
+  const chartData = Object.entries(requestsPerDay).map(([day, count]) => count);
+
+  const dataRequestsPerDay = [
+    {
+      name: "Requests per Day",
+      data: chartData,
+    },
+  ];
+
+  // const xaxisCategories = chartData.map((dataPoint) => dataPoint.x);
+  const xaxisCategories = Object.keys(requestsPerDay);
+
   const brandColor = useColorModeValue("brand.500", "white");
   const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
   const red = useColorModeValue("red.500", "red.200");
@@ -91,15 +120,6 @@ function UserReports(props) {
   return (
     <>
       <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-        {/* <Box display="flex" alignItems="center" mb={5}>
-          <IndicatorDot isActive={realTimeMetrics} />
-          <Switch
-            isChecked={realTimeMetrics}
-            onChange={() => setRealTimeMetrics(!realTimeMetrics)}
-          />
-          <Text ml={2}>Live Metrics</Text>
-        </Box> */}
-
         <Box
           display="flex"
           alignItems="center"
@@ -181,6 +201,18 @@ function UserReports(props) {
             value={avgTokens[0] ? `$ ${avgTokens[0]?.total_cost}` : `$ 0`}
           />
         </SimpleGrid>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={5}
+        >
+          <DailyTraffic
+            dataRequestsPerDay={dataRequestsPerDay}
+            xaxisCategories={xaxisCategories}
+          />
+        </Box>
+
         <SimpleGrid columns={{ base: 1, md: 1, xl: 2 }} gap="20px" mb="20px">
           <ComplexTable
             columnsData={columnsModelData}
@@ -205,6 +237,7 @@ const mapState = (state) => ({
   avgTokens: state.AvgTokens.avgTokens || [],
   modelDistribution: state.ModelDistribution.modelDistribution || [],
   usersUsageStat: state.UsersUsageStat.usersUsageStat || [],
+  requests: state.ListRequests.requests || [],
 });
 
 const mapDispatch = (dispatch) => ({
@@ -213,6 +246,7 @@ const mapDispatch = (dispatch) => ({
   getAvgTokens: dispatch.AvgTokens.getAvgTokens,
   geModels: dispatch.ModelDistribution.getModelDistribution,
   getUsersUsageStat: dispatch.UsersUsageStat.getUsersUsageStat,
+  getRequests: dispatch.ListRequests.getProviderRequests,
 });
 
 export default connect(mapState, mapDispatch)(UserReports);
