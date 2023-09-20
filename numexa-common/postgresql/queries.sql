@@ -123,6 +123,9 @@ INSERT INTO nxa_api_key_property (rate_limit, rate_limit_period, enforce_caching
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
+-- name: GetNXAKeyPropertyByID :one
+SELECT * FROM nxa_api_key_property WHERE id = $1;
+
 -- name: GetSetting :one
 SELECT * FROM setting WHERE key = $1;
 

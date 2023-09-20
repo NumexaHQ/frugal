@@ -43,5 +43,6 @@ type DB interface {
 	CreateSetting(ctx context.Context, setting postgresql_db.CreateSettingParams) (postgresql_db.Setting, error)
 	GetSetting(ctx context.Context, key string) (postgresql_db.Setting, error)
 	GetProviderKeyById(ctx context.Context, id int32) (postgresql_db.ProviderKey, error)
+	CheckProviderAndNXAKeyPropertyFromNXAKey(ctx context.Context, nxaKey string, providerName string) (bool, postgresql_db.ProviderKey, postgresql_db.NxaApiKeyProperty, []postgresql_db.ProviderSecret, error)
 	CreateNXAKeyProperty(ctx context.Context, nxaKeyProperty postgresql_db.CreateNXAKeyPropertyParams) (postgresql_db.NxaApiKeyProperty, error)
 }

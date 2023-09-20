@@ -12,6 +12,13 @@ func Middleware(h http.Handler) http.Handler {
 
 		r = r.WithContext(model.AssignRequestID(ctx))
 
+		// validate api key
+		apiKey := r.Header.Get("X-Numexa-Api-Key")
+		if apiKey == "" {
+			http.Error(w, "Missing API key", http.StatusUnauthorized)
+			return
+		}
+
 		h.ServeHTTP(w, r)
 	})
 }

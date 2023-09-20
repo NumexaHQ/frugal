@@ -464,6 +464,28 @@ func (q *Queries) GetAllApiKeysByUserId(ctx context.Context, userID int32) ([]Ge
 	return items, nil
 }
 
+const getNXAKeyPropertyByID = `-- name: GetNXAKeyPropertyByID :one
+SELECT id, rate_limit, rate_limit_period, enforce_caching, overall_cost_limit, alert_on_threshold, provider_key_id, expires_at, created_at, updated_at FROM nxa_api_key_property WHERE id = $1
+`
+
+func (q *Queries) GetNXAKeyPropertyByID(ctx context.Context, id int32) (NxaApiKeyProperty, error) {
+	row := q.db.QueryRowContext(ctx, getNXAKeyPropertyByID, id)
+	var i NxaApiKeyProperty
+	err := row.Scan(
+		&i.ID,
+		&i.RateLimit,
+		&i.RateLimitPeriod,
+		&i.EnforceCaching,
+		&i.OverallCostLimit,
+		&i.AlertOnThreshold,
+		&i.ProviderKeyID,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getOrganization = `-- name: GetOrganization :one
 SELECT id, name, created_at, updated_at FROM organizations WHERE id = $1
 `

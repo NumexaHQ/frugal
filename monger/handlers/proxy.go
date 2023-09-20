@@ -11,7 +11,10 @@ import (
 	"strings"
 	"time"
 
+	authModel "github.com/NumexaHQ/captainCache/model"
 	commonConstants "github.com/NumexaHQ/captainCache/numexa-common/constants"
+	authConstants "github.com/NumexaHQ/captainCache/pkg/constants"
+	"github.com/NumexaHQ/captainCache/pkg/providerkeys"
 	"github.com/NumexaHQ/monger/model"
 	nxopenaiModel "github.com/NumexaHQ/monger/model/openai"
 	gptcache "github.com/NumexaHQ/monger/pkg/cache"
@@ -27,6 +30,76 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 	gptCache := gptcache.Cache{}
 
 	apiKey := r.Header.Get("X-Numexa-Api-Key")
+
+	// check if openai key is present
+	// todo: pprof profile this!!!
+	if r.Header.Get("Organization") == "" || r.Header.Get("Authorization") == "" {
+		// check if api key has associated openai key
+		// if not, return error
+		// else, set the openai key in the header
+		//
+		isValid, providerKey, keyProperty, providerSecrets, err := h.AuthDB.CheckProviderAndNXAKeyPropertyFromNXAKey(r.Context(), apiKey, authConstants.PROVIDER_OPENAI)
+		if err != nil {
+			logrus.Errorf("Error checking provider and nxa key property from nxa key: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if !isValid {
+			http.Error(w, "Invalid/Expired API key", http.StatusUnauthorized)
+			return
+		}
+
+		logrus.Infof("provider key: %+v", providerKey)
+		logrus.Infof("providerSecrets: %+v", providerSecrets)
+
+		if providerKey.Provider != authConstants.PROVIDER_OPENAI {
+			http.Error(w, "Invalid provider", http.StatusUnauthorized)
+			return
+		}
+
+		// todo: use keyproperty, to enforce rules
+		logrus.Debugf("key property: %v", keyProperty)
+
+		keys := make(map[string]string)
+
+		for _, secrets := range providerSecrets {
+			keys[secrets.Type] = secrets.Key
+		}
+
+		// here kp.Keys is encrypted keys
+		kp := authModel.ProviderKeys{
+			Name:      providerKey.Name,
+			Provider:  providerKey.Provider,
+			Keys:      keys,
+			ProjectId: providerKey.ProjectID,
+		}
+
+		kpB, err := json.Marshal(kp)
+		if err != nil {
+			logrus.Errorf("Error marshalling provider keys: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		provider, err := providerkeys.GetProvider(providerKey.Provider, kpB, true)
+		if err != nil {
+			logrus.Errorf("Error getting provider: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		decryptedKeys, err := provider.GetDecryptedKeys(r.Context(), h.AuthDB)
+		if err != nil {
+			logrus.Errorf("Error getting decrypted keys: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		// set the openai key in the header
+		r.Header.Set("Organization", decryptedKeys["openai_org"])
+		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", decryptedKeys["openai_key"]))
+	}
 
 	index := strings.Index(originalURL, "/v1/openai/")
 	if index == -1 {
