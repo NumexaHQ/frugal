@@ -29,13 +29,8 @@ func generateAPIKey() string {
 	return fmt.Sprintf("sk-%s", string(b))
 }
 
-// func hashPassword(password string) string {
-// 	hashPassword := utils.HashPassword(password)
-// }
-
 func (h *Handler) CreateApiKey(c *fiber.Ctx) error {
-	type RequestBody postgresql_db.NxaApiKey
-	var reqBody RequestBody
+	var reqBody model.GenerateNXTokenRequest
 	if err := c.BodyParser(&reqBody); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid request body",
@@ -113,16 +108,61 @@ func (h *Handler) CreateApiKey(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = h.DB.CreateApiKey(c.Context(), postgresql_db.NxaApiKey{
+	nxaAPIKey := postgresql_db.CreateApiKeyParams{
 		Name:      reqBody.Name,
 		ApiKey:    apiKey,
 		UserID:    user.ID,
 		ProjectID: reqBody.ProjectID,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 365),
+		Revoked:   false,
+		Disabled:  false,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 365), // this might not be respected, since expiry is set in the key property
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	})
+	}
 
+	if reqBody.NxaProviderKeyID != 0 {
+		_, err := h.DB.GetProviderKeyById(c.Context(), reqBody.NxaProviderKeyID)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				log.Errorf("error getting provider key by id: %v", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": "Error getting provider key by id",
+				})
+			} else {
+				log.Errorf("provider key not found: %v", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": "Something went wrong. Please contact the administrator",
+				})
+			}
+		}
+		nxaAPIKey.ProviderKeyID = sql.NullInt32{Int32: reqBody.NxaProviderKeyID, Valid: true}
+	}
+
+	// check if property exists
+	if reqBody.Property != (model.NXTokenPropertyRequest{}) {
+		expiry := time.Now().Add(time.Hour * 24 * 365) // todo: default expiry is 1 year, need to change this to never expire
+		if reqBody.Property.ExpiresAt.IsZero() {
+			reqBody.Property.ExpiresAt = expiry
+		}
+		nxkp, err := h.DB.CreateNXAKeyProperty(c.Context(), postgresql_db.CreateNXAKeyPropertyParams{
+			RateLimit:        reqBody.Property.RateLimit,
+			RateLimitPeriod:  reqBody.Property.RateLimitPeriod,
+			EnforceCaching:   reqBody.Property.EnforceCaching,
+			OverallCostLimit: reqBody.Property.OverallCostLimit,
+			AlertOnThreshold: reqBody.Property.AlertOnThreshold,
+			ExpiresAt:        expiry,
+		})
+		if err != nil {
+			log.Errorf("error creating nxa key property: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal server error",
+			})
+		}
+
+		nxaAPIKey.NxaApiKeyPropertyID = sql.NullInt32{Int32: nxkp.ID, Valid: true}
+	}
+
+	_, err = h.DB.CreateApiKey(c.Context(), nxaAPIKey)
 	if err != nil {
 		log.Errorf("error generating api key: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -177,8 +217,6 @@ func (h *Handler) RegisterHandler(c *fiber.Ctx) error {
 
 	// create organization
 	organization.Name = utils.GenerateOrganizationName()
-
-	log.Infof("organization: %+v", organization)
 	organization, err = h.DB.CreateOrganization(c.Context(), organization)
 	if err != nil {
 		log.Errorf("error creating organization: %v", err)

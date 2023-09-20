@@ -57,8 +57,8 @@ SELECT * FROM project_users WHERE project_id = $1 AND user_id = $2;
 SELECT * FROM nxa_api_key WHERE project_id = $1 AND api_key = $2;
 
 -- name: CreateApiKey :one
-INSERT INTO nxa_api_key (name, api_key, user_id, project_id, created_at, updated_at, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO nxa_api_key (name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 RETURNING *;
 
 -- name: GetAPIkeyByUserId :one
@@ -107,15 +107,20 @@ SELECT * FROM provider_secrets WHERE id = $1;
 -- name: GetProviderSecretsByProviderKeyID :many
 SELECT * FROM provider_secrets WHERE provider_key_id = $1;
 
--- name: GetProviderSecretsByProviderKeyID :many
-SELECT * FROM provider_secrets WHERE provider_key_id = $1; 
-
 -- name: GetProviderSecretByProviderKeyIDAndType :one
 SELECT * FROM provider_secrets WHERE provider_key_id = $1 AND type = $2;
+
+-- name: GetProviderKeyByID :one
+SELECT * FROM provider_keys WHERE id = $1;
 
 -- name: CreateSetting :one
 INSERT INTO setting (key, value, visible, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: CreateNXAKeyProperty :one
+INSERT INTO nxa_api_key_property (rate_limit, rate_limit_period, enforce_caching, overall_cost_limit, alert_on_threshold, provider_key_id, expires_at, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: GetSetting :one

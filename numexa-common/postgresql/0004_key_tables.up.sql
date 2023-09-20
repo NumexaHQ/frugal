@@ -45,5 +45,10 @@ CREATE TABLE IF NOT EXISTS "public"."nxa_api_key_property" (
 );
 
 ALTER TABLE "public"."nxa_api_key" ADD COLUMN "nxa_api_key_property_id" INTEGER NULL REFERENCES nxa_api_key_property(id);
+ALTER TABLE "public"."nxa_api_key" ADD COLUMN "provider_key_id" INTEGER NULL REFERENCES provider_keys(id);
+ALTER TABLE "public"."nxa_api_key" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE "public"."nxa_api_key" ADD COLUMN "revoked_at" TIMESTAMP NULL;
+ALTER TABLE "public"."nxa_api_key" ADD COLUMN "revoked_by" INTEGER NULL REFERENCES users(id);
+ALTER TABLE "public"."nxa_api_key" ADD COLUMN "disabled" BOOLEAN NOT NULL DEFAULT FALSE;
 
 COMMIT;

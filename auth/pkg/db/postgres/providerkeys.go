@@ -30,3 +30,8 @@ func (p *Postgres) GetProviderSecretByProviderId(ctx context.Context, id int32) 
 	queries := getPostgresQueries(p.db)
 	return queries.GetProviderSecretsByProviderKeyID(ctx, id)
 }
+
+func (p *Postgres) GetProviderKeyById(ctx context.Context, id int32) (postgresql_db.ProviderKey, error) {
+	queries := getPostgresQueries(p.db)
+	return queries.GetProviderKeyByID(ctx, id)
+}

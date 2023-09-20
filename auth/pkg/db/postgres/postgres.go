@@ -171,18 +171,10 @@ func (p *Postgres) GetOrganization(ctx context.Context, organizationID int32) (p
 	return organization, nil
 }
 
-func (p *Postgres) CreateApiKey(ctx context.Context, apiKey postgresql_db.NxaApiKey) (postgresql_db.NxaApiKey, error) {
+func (p *Postgres) CreateApiKey(ctx context.Context, apiKeyParam postgresql_db.CreateApiKeyParams) (postgresql_db.NxaApiKey, error) {
 	queries := getPostgresQueries(p.db)
 
-	apiKey, err := queries.CreateApiKey(ctx, postgresql_db.CreateApiKeyParams{
-		Name:      apiKey.Name,
-		ApiKey:    apiKey.ApiKey,
-		UserID:    apiKey.UserID,
-		ProjectID: apiKey.ProjectID,
-		ExpiresAt: apiKey.ExpiresAt,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	})
+	apiKey, err := queries.CreateApiKey(ctx, apiKeyParam)
 
 	return apiKey, err
 }

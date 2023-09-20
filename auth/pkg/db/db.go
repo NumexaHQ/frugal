@@ -26,7 +26,7 @@ type DB interface {
 	GetUsersByProjectId(ctx context.Context, projectID int32) ([]postgresql_db.User, error)
 	GetProject(ctx context.Context, projectID int32) (postgresql_db.Project, error)
 	CreateOrganization(ctx context.Context, organization postgresql_db.Organization) (postgresql_db.Organization, error)
-	CreateApiKey(ctx context.Context, apiKey postgresql_db.NxaApiKey) (postgresql_db.NxaApiKey, error)
+	CreateApiKey(ctx context.Context, apiKeyParam postgresql_db.CreateApiKeyParams) (postgresql_db.NxaApiKey, error)
 	GetAPIkeyByUserId(ctx context.Context, userID int32) ([]postgresql_db.NxaApiKey, error)
 	GetUserById(ctx context.Context, id int32) (postgresql_db.User, error)
 	GetAPIkeyByApiKey(ctx context.Context, apiKey string) (postgresql_db.NxaApiKey, error)
@@ -42,4 +42,6 @@ type DB interface {
 	GetProviderKeysByProjectId(ctx context.Context, projectID int32) ([]postgresql_db.ProviderKey, error)
 	CreateSetting(ctx context.Context, setting postgresql_db.CreateSettingParams) (postgresql_db.Setting, error)
 	GetSetting(ctx context.Context, key string) (postgresql_db.Setting, error)
+	GetProviderKeyById(ctx context.Context, id int32) (postgresql_db.ProviderKey, error)
+	CreateNXAKeyProperty(ctx context.Context, nxaKeyProperty postgresql_db.CreateNXAKeyPropertyParams) (postgresql_db.NxaApiKeyProperty, error)
 }

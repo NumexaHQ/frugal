@@ -13,19 +13,25 @@ import (
 )
 
 const createApiKey = `-- name: CreateApiKey :one
-INSERT INTO nxa_api_key (name, api_key, user_id, project_id, created_at, updated_at, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id
+INSERT INTO nxa_api_key (name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+RETURNING id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled
 `
 
 type CreateApiKeyParams struct {
-	Name      string    `json:"name"`
-	ApiKey    string    `json:"api_key"`
-	UserID    int32     `json:"user_id"`
-	ProjectID int32     `json:"project_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+	Name                string        `json:"name"`
+	ApiKey              string        `json:"api_key"`
+	UserID              int32         `json:"user_id"`
+	ProjectID           int32         `json:"project_id"`
+	CreatedAt           time.Time     `json:"created_at"`
+	UpdatedAt           time.Time     `json:"updated_at"`
+	ExpiresAt           time.Time     `json:"expires_at"`
+	NxaApiKeyPropertyID sql.NullInt32 `json:"nxa_api_key_property_id"`
+	ProviderKeyID       sql.NullInt32 `json:"provider_key_id"`
+	Revoked             bool          `json:"revoked"`
+	RevokedAt           sql.NullTime  `json:"revoked_at"`
+	RevokedBy           sql.NullInt32 `json:"revoked_by"`
+	Disabled            bool          `json:"disabled"`
 }
 
 func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (NxaApiKey, error) {
@@ -37,6 +43,12 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Nxa
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.ExpiresAt,
+		arg.NxaApiKeyPropertyID,
+		arg.ProviderKeyID,
+		arg.Revoked,
+		arg.RevokedAt,
+		arg.RevokedBy,
+		arg.Disabled,
 	)
 	var i NxaApiKey
 	err := row.Scan(
@@ -49,6 +61,57 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Nxa
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.NxaApiKeyPropertyID,
+		&i.ProviderKeyID,
+		&i.Revoked,
+		&i.RevokedAt,
+		&i.RevokedBy,
+		&i.Disabled,
+	)
+	return i, err
+}
+
+const createNXAKeyProperty = `-- name: CreateNXAKeyProperty :one
+INSERT INTO nxa_api_key_property (rate_limit, rate_limit_period, enforce_caching, overall_cost_limit, alert_on_threshold, provider_key_id, expires_at, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, rate_limit, rate_limit_period, enforce_caching, overall_cost_limit, alert_on_threshold, provider_key_id, expires_at, created_at, updated_at
+`
+
+type CreateNXAKeyPropertyParams struct {
+	RateLimit        int32         `json:"rate_limit"`
+	RateLimitPeriod  string        `json:"rate_limit_period"`
+	EnforceCaching   bool          `json:"enforce_caching"`
+	OverallCostLimit int32         `json:"overall_cost_limit"`
+	AlertOnThreshold int32         `json:"alert_on_threshold"`
+	ProviderKeyID    sql.NullInt32 `json:"provider_key_id"`
+	ExpiresAt        time.Time     `json:"expires_at"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+func (q *Queries) CreateNXAKeyProperty(ctx context.Context, arg CreateNXAKeyPropertyParams) (NxaApiKeyProperty, error) {
+	row := q.db.QueryRowContext(ctx, createNXAKeyProperty,
+		arg.RateLimit,
+		arg.RateLimitPeriod,
+		arg.EnforceCaching,
+		arg.OverallCostLimit,
+		arg.AlertOnThreshold,
+		arg.ProviderKeyID,
+		arg.ExpiresAt,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i NxaApiKeyProperty
+	err := row.Scan(
+		&i.ID,
+		&i.RateLimit,
+		&i.RateLimitPeriod,
+		&i.EnforceCaching,
+		&i.OverallCostLimit,
+		&i.AlertOnThreshold,
+		&i.ProviderKeyID,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -276,7 +339,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getAPIKeyByNameAndProjectId = `-- name: GetAPIKeyByNameAndProjectId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE name = $1 AND project_id = $2
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled FROM nxa_api_key WHERE name = $1 AND project_id = $2
 `
 
 type GetAPIKeyByNameAndProjectIdParams struct {
@@ -297,12 +360,17 @@ func (q *Queries) GetAPIKeyByNameAndProjectId(ctx context.Context, arg GetAPIKey
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.NxaApiKeyPropertyID,
+		&i.ProviderKeyID,
+		&i.Revoked,
+		&i.RevokedAt,
+		&i.RevokedBy,
+		&i.Disabled,
 	)
 	return i, err
 }
 
 const getAPIkeyByApiKey = `-- name: GetAPIkeyByApiKey :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE api_key = $1
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled FROM nxa_api_key WHERE api_key = $1
 `
 
 func (q *Queries) GetAPIkeyByApiKey(ctx context.Context, apiKey string) (NxaApiKey, error) {
@@ -318,12 +386,17 @@ func (q *Queries) GetAPIkeyByApiKey(ctx context.Context, apiKey string) (NxaApiK
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.NxaApiKeyPropertyID,
+		&i.ProviderKeyID,
+		&i.Revoked,
+		&i.RevokedAt,
+		&i.RevokedBy,
+		&i.Disabled,
 	)
 	return i, err
 }
 
 const getAPIkeyByUserId = `-- name: GetAPIkeyByUserId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE user_id = $1
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled FROM nxa_api_key WHERE user_id = $1
 `
 
 func (q *Queries) GetAPIkeyByUserId(ctx context.Context, userID int32) (NxaApiKey, error) {
@@ -339,6 +412,11 @@ func (q *Queries) GetAPIkeyByUserId(ctx context.Context, userID int32) (NxaApiKe
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.NxaApiKeyPropertyID,
+		&i.ProviderKeyID,
+		&i.Revoked,
+		&i.RevokedAt,
+		&i.RevokedBy,
+		&i.Disabled,
 	)
 	return i, err
 }
@@ -577,6 +655,27 @@ func (q *Queries) GetProviderKey(ctx context.Context, id int32) (ProviderKey, er
 	return i, err
 }
 
+const getProviderKeyByID = `-- name: GetProviderKeyByID :one
+SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE id = $1
+`
+
+func (q *Queries) GetProviderKeyByID(ctx context.Context, id int32) (ProviderKey, error) {
+	row := q.db.QueryRowContext(ctx, getProviderKeyByID, id)
+	var i ProviderKey
+	err := row.Scan(
+		&i.ID,
+		&i.KeyUuid,
+		&i.Name,
+		&i.Provider,
+		&i.CreatorID,
+		&i.OrganizationID,
+		&i.ProjectID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getProviderKeyByName = `-- name: GetProviderKeyByName :one
 SELECT id, key_uuid, name, provider, creator_id, organization_id, project_id, created_at, updated_at FROM provider_keys WHERE name = $1
 `
@@ -750,7 +849,7 @@ func (q *Queries) GetSetting(ctx context.Context, key string) (Setting, error) {
 }
 
 const getTokenByProjectId = `-- name: GetTokenByProjectId :one
-SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id FROM nxa_api_key WHERE project_id = $1 AND api_key = $2
+SELECT id, name, api_key, user_id, project_id, created_at, updated_at, expires_at, nxa_api_key_property_id, provider_key_id, revoked, revoked_at, revoked_by, disabled FROM nxa_api_key WHERE project_id = $1 AND api_key = $2
 `
 
 type GetTokenByProjectIdParams struct {
@@ -771,6 +870,11 @@ func (q *Queries) GetTokenByProjectId(ctx context.Context, arg GetTokenByProject
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.NxaApiKeyPropertyID,
+		&i.ProviderKeyID,
+		&i.Revoked,
+		&i.RevokedAt,
+		&i.RevokedBy,
+		&i.Disabled,
 	)
 	return i, err
 }

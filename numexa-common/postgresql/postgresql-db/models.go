@@ -20,18 +20,24 @@ type NxaApiKey struct {
 	UpdatedAt           time.Time     `json:"updated_at"`
 	ExpiresAt           time.Time     `json:"expires_at"`
 	NxaApiKeyPropertyID sql.NullInt32 `json:"nxa_api_key_property_id"`
+	ProviderKeyID       sql.NullInt32 `json:"provider_key_id"`
+	Revoked             bool          `json:"revoked"`
+	RevokedAt           sql.NullTime  `json:"revoked_at"`
+	RevokedBy           sql.NullInt32 `json:"revoked_by"`
+	Disabled            bool          `json:"disabled"`
 }
 
 type NxaApiKeyProperty struct {
-	ID               int32     `json:"id"`
-	RateLimit        int32     `json:"rate_limit"`
-	RateLimitPeriod  string    `json:"rate_limit_period"`
-	EnforceCaching   bool      `json:"enforce_caching"`
-	OverallCostLimit int32     `json:"overall_cost_limit"`
-	AlertOnThreshold int32     `json:"alert_on_threshold"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID               int32         `json:"id"`
+	RateLimit        int32         `json:"rate_limit"`
+	RateLimitPeriod  string        `json:"rate_limit_period"`
+	EnforceCaching   bool          `json:"enforce_caching"`
+	OverallCostLimit int32         `json:"overall_cost_limit"`
+	AlertOnThreshold int32         `json:"alert_on_threshold"`
+	ProviderKeyID    sql.NullInt32 `json:"provider_key_id"`
+	ExpiresAt        time.Time     `json:"expires_at"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
 }
 
 type Organization struct {
