@@ -4,16 +4,24 @@ FROM golang:1.20.6-alpine3.18 AS builder
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
+RUN mkdir auth && \
+    mkdir numexa-common
+
 # Copy go mod and sum files
-COPY . .
+COPY auth/go.mod ./auth
+COPY auth/go.sum ./auth
+COPY numexa-common/go.mod ./numexa-common
+# numexa-common doesnot have go.sum file
 
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN cd auth && \
-    go mod download && \
-    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o nxa-auth .
+RUN cd auth && go mod download
+RUN cd numexa-common && go mod download 
+
+COPY ./auth ./auth
+COPY ./numexa-common ./numexa-common
 
 # Build the Go app
-# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o nxa-auth .
+RUN cd auth && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o nxa-auth .
 
 # Path: Dockerfile
 #  build final image
