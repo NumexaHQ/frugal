@@ -50,9 +50,6 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logrus.Infof("provider key: %+v", providerKey)
-		logrus.Infof("providerSecrets: %+v", providerSecrets)
-
 		if providerKey.Provider != authConstants.PROVIDER_OPENAI {
 			http.Error(w, "Invalid provider", http.StatusUnauthorized)
 			return
