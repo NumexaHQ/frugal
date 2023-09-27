@@ -256,6 +256,14 @@ func (h *Handler) ComputeAverageTokensByProjectID(c *fiber.Ctx) error {
 	} else {
 		_ = h.ChConfig.DB.Table("proxy_responses").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&responses)
 	}
+
+	var requests []model.ProxyRequest
+	if to != 0 && from != 0 {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ? AND request_timestamp BETWEEN ? AND ?", userID, int32(projectIDT), from, to).Scan(&requests)
+	} else {
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ? ", userID, int32(projectIDT)).Scan(&requests)
+	}
+
 	var totalPromptTokens int
 	var totalTotalTokens int
 	var totalCompletionTokens int
@@ -309,9 +317,9 @@ func (h *Handler) ComputeAverageTokensByProjectID(c *fiber.Ctx) error {
 		"avg_prompt_tokens":     avgPromptTokens,
 		"avg_total_tokens":      avgTotalTokens,
 		"avg_completion_tokens": avgCompletionTokens,
-		"Total_responses":       len(responses), // Converting to seconds for easy representation.
+		"Total_responses":       len(requests), // Converting to seconds for easy representation.
 		"total_success":         count,
-		"total_failure":         len(responses) - count,
+		"total_failure":         len(requests) - count,
 		"total_cost":            fmt.Sprintf("%.4f", totalCost),
 	}
 
