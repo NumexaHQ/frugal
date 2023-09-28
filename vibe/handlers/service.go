@@ -26,6 +26,9 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 		return err
 	}
 
+	// if page or size is not provided then we show latest 100 requests
+	pageNumber, pageSize := GetPagination(c.Query("page"), c.Query("page_size"))
+
 	userIDT, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
 		return err
@@ -34,9 +37,9 @@ func (h *Handler) GetRequestByUserID(c *fiber.Ctx) error {
 	var result []model.ProxyRequest
 	var res []vibeModel.AllRequestsTableResponse
 	if to != 0 && from != 0 {
-		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND request_timestamp BETWEEN ? AND ?", int32(userIDT), from, to).Scan(&result)
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND request_timestamp BETWEEN ? AND ?", int32(userIDT), from, to).Order("request_timestamp DESC").Limit(pageSize).Offset((pageNumber - 1) * pageSize).Scan(&result)
 	} else {
-		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ?", int32(userIDT)).Scan(&result)
+		_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ?", int32(userIDT)).Order("request_timestamp DESC").Limit(pageSize).Offset((pageNumber - 1) * pageSize).Scan(&result)
 	}
 
 	for _, v := range result {
@@ -439,4 +442,23 @@ func (h *Handler) EditFieldOfRequestInPromptDirectory(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Field of request updated successfully",
 	})
+}
+
+func GetPagination(page, size string) (pageNumber, pageSize int) {
+	if page == "" || size == "" {
+		// if page or size is not provided then return default values
+		return 1, 100
+	}
+
+	pageNumber, err := strconv.Atoi(page)
+	if err != nil {
+		return 0, 0
+	}
+
+	pageSize, err = strconv.Atoi(size)
+	if err != nil {
+		return 0, 0
+	}
+
+	return pageNumber, pageSize
 }
