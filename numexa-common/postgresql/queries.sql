@@ -26,6 +26,12 @@ SELECT * FROM organizations WHERE id = $1;
 -- name: GetOrganizationByName :one
 SELECT * FROM organizations WHERE name = $1;
 
+-- name: GetOrganizationForUser :one
+SELECT * FROM organizations WHERE id = (SELECT users.organization_id FROM users WHERE users.id = $1);
+
+-- name: GetOrganizationForProject :one
+SELECT * FROM organizations WHERE id = (SELECT projects.organization_id FROM projects WHERE projects.id = $1);
+
 -- name: GetUsers :many
 SELECT * FROM users WHERE organization_id = $1;
 

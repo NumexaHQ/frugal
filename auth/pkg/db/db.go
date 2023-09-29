@@ -26,6 +26,8 @@ type DB interface {
 	GetUsersByProjectId(ctx context.Context, projectID int32) ([]postgresql_db.User, error)
 	GetProject(ctx context.Context, projectID int32) (postgresql_db.Project, error)
 	CreateOrganization(ctx context.Context, organization postgresql_db.Organization) (postgresql_db.Organization, error)
+	GetOrganizationForUser(ctx context.Context, userID int32) (postgresql_db.Organization, error)
+	GetOrganizationForProject(ctx context.Context, projectID int32) (postgresql_db.Organization, error)
 	CreateApiKey(ctx context.Context, apiKeyParam postgresql_db.CreateApiKeyParams) (postgresql_db.NxaApiKey, error)
 	GetAPIkeyByUserId(ctx context.Context, userID int32) ([]postgresql_db.NxaApiKey, error)
 	GetUserById(ctx context.Context, id int32) (postgresql_db.User, error)

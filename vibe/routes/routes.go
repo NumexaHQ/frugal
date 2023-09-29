@@ -32,4 +32,5 @@ func Setup(app *fiber.App, chConfig nxClickhouse.ClickhouseConfig, authdb nxAuth
 	app.Post("/add_prompt_directory", nxHandler.AuthMiddleware, nxHandler.AddRequestToPromptDirectory)
 	app.Get("/prompt_directory/:projectID", nxHandler.AuthMiddleware, nxHandler.GetRequestFromPromptDirectory)
 	app.Put("/update_prompt_directory", nxHandler.AuthMiddleware, nxHandler.EditFieldOfRequestInPromptDirectory)
+	app.Get("/usage/:projectID", nxHandler.AuthMiddleware, nxHandler.GetUsageByProjectID)
 }

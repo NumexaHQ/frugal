@@ -119,7 +119,7 @@ func (q *Queries) CreateNXAKeyProperty(ctx context.Context, arg CreateNXAKeyProp
 const createOrganization = `-- name: CreateOrganization :one
 INSERT INTO organizations (name, created_at, updated_at)
 VALUES ($1, $2, $3)
-RETURNING id, name, created_at, updated_at
+RETURNING id, name, created_at, updated_at, tier
 `
 
 type CreateOrganizationParams struct {
@@ -136,6 +136,7 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Tier,
 	)
 	return i, err
 }
@@ -487,7 +488,7 @@ func (q *Queries) GetNXAKeyPropertyByID(ctx context.Context, id int32) (NxaApiKe
 }
 
 const getOrganization = `-- name: GetOrganization :one
-SELECT id, name, created_at, updated_at FROM organizations WHERE id = $1
+SELECT id, name, created_at, updated_at, tier FROM organizations WHERE id = $1
 `
 
 func (q *Queries) GetOrganization(ctx context.Context, id int32) (Organization, error) {
@@ -498,12 +499,13 @@ func (q *Queries) GetOrganization(ctx context.Context, id int32) (Organization, 
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Tier,
 	)
 	return i, err
 }
 
 const getOrganizationByName = `-- name: GetOrganizationByName :one
-SELECT id, name, created_at, updated_at FROM organizations WHERE name = $1
+SELECT id, name, created_at, updated_at, tier FROM organizations WHERE name = $1
 `
 
 func (q *Queries) GetOrganizationByName(ctx context.Context, name string) (Organization, error) {
@@ -514,6 +516,41 @@ func (q *Queries) GetOrganizationByName(ctx context.Context, name string) (Organ
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Tier,
+	)
+	return i, err
+}
+
+const getOrganizationForProject = `-- name: GetOrganizationForProject :one
+SELECT id, name, created_at, updated_at, tier FROM organizations WHERE id = (SELECT projects.organization_id FROM projects WHERE projects.id = $1)
+`
+
+func (q *Queries) GetOrganizationForProject(ctx context.Context, id int32) (Organization, error) {
+	row := q.db.QueryRowContext(ctx, getOrganizationForProject, id)
+	var i Organization
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Tier,
+	)
+	return i, err
+}
+
+const getOrganizationForUser = `-- name: GetOrganizationForUser :one
+SELECT id, name, created_at, updated_at, tier FROM organizations WHERE id = (SELECT users.organization_id FROM users WHERE users.id = $1)
+`
+
+func (q *Queries) GetOrganizationForUser(ctx context.Context, id int32) (Organization, error) {
+	row := q.db.QueryRowContext(ctx, getOrganizationForUser, id)
+	var i Organization
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Tier,
 	)
 	return i, err
 }

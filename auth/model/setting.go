@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	commonModel "github.com/NumexaHQ/captainCache/numexa-common/model"
 	postgresql_db "github.com/NumexaHQ/captainCache/numexa-common/postgresql/postgresql-db"
 	"github.com/NumexaHQ/captainCache/pkg/constants"
 	nxDB "github.com/NumexaHQ/captainCache/pkg/db"
@@ -79,4 +80,59 @@ func GetAESSettingValue(ctx context.Context, db nxDB.DB) (json.RawMessage, error
 	}
 
 	return json.RawMessage(b), nil
+}
+
+func InitializeUsageLimitSetting(ctx context.Context, db nxDB.DB) error {
+	// set usage_limit in setting table, if !exists
+	_, err := db.GetSetting(ctx, constants.USAGE_LIMIT)
+	if err != nil {
+		l := []commonModel.PlanRequestLimit{
+			{
+				PlanID: "free",
+				Name:   "Free",
+				Limit:  50000, // 50k
+			},
+			{
+				PlanID: "trial",
+				Name:   "Trial",
+				Limit:  100000, // 100k
+			},
+			{
+				PlanID: "promo",
+				Name:   "Promo",
+				Limit:  50000, // 50k, because promo accounts have free provider credits
+			},
+			{
+				PlanID: "paid",
+				Name:   "Paid",
+				Limit:  1000000, // 1M
+			},
+		}
+
+		val := commonModel.UsageLimitSetting{
+			RequestLimit: l,
+		}
+
+		usageLimitValue := &SettingValue{
+			Label:       "Numexa Usage Limit Setting",
+			Description: "Usage Limit",
+			Value:       val,
+		}
+
+		rawUsageLimit, err := json.Marshal(usageLimitValue)
+		if err != nil {
+			return err
+		}
+		rawMessageUsageLimit := json.RawMessage(rawUsageLimit)
+
+		_, err = db.CreateSetting(ctx, postgresql_db.CreateSettingParams{
+			Key:     constants.USAGE_LIMIT,
+			Value:   rawMessageUsageLimit,
+			Visible: false,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

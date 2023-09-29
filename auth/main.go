@@ -47,6 +47,12 @@ func main() {
 		log.Fatal("Failed to initialize AES setting: ", err)
 	}
 
+	// init default usage limit setting
+	err = model.InitializeUsageLimitSetting(context.Background(), db)
+	if err != nil {
+		log.Fatal("Failed to initialize usage limit setting: ", err)
+	}
+
 	// Create a new Fiber app
 	app := fiber.New()
 

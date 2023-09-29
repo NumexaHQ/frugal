@@ -6,7 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	authModel "github.com/NumexaHQ/captainCache/model"
 	costcalculation "github.com/NumexaHQ/captainCache/numexa-common/cost-calculation"
+	commonModel "github.com/NumexaHQ/captainCache/numexa-common/model"
+	authConst "github.com/NumexaHQ/captainCache/pkg/constants"
 	"github.com/NumexaHQ/monger/model"
 	vibeModel "github.com/NumexaHQ/vibe/model"
 	"github.com/gofiber/fiber/v2"
@@ -450,6 +453,72 @@ func (h *Handler) EditFieldOfRequestInPromptDirectory(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Field of request updated successfully",
 	})
+}
+
+// GetUsageByProjectID returns the usage of the project
+func (h *Handler) GetUsageByProjectID(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(float64)
+	projectID := c.Params("projectID")
+	projectIDT, err := strconv.ParseInt(projectID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var result []model.ProxyRequest
+	_ = h.ChConfig.DB.Table("proxy_requests").Where("user_id = ? AND project_id = ?", userID, int32(projectIDT)).Scan(&result)
+
+	// get usage limits
+	// var usageLimit model.UsageLimit
+
+	u, err := h.AuthDB.GetSetting(c.Context(), authConst.USAGE_LIMIT)
+	if err != nil {
+		return err
+	}
+
+	var settingVal authModel.SettingValue
+	err = json.Unmarshal(u.Value, &settingVal)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(settingVal.Value)
+	if err != nil {
+		return err
+	}
+
+	var usageLimit commonModel.UsageLimitSetting
+	err = json.Unmarshal(b, &usageLimit)
+	if err != nil {
+		return err
+	}
+
+	// get user plan
+	// var userPlan model.UserPlan
+	o, err := h.AuthDB.GetOrganizationForProject(c.Context(), int32(projectIDT))
+	if err != nil {
+		return err
+	}
+
+	// get usage
+
+	for _, v := range usageLimit.RequestLimit {
+		if v.PlanID == o.Tier {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"usage": fiber.Map{
+					"limit": v.Limit,
+					"usage": len(result),
+				},
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"usage": fiber.Map{
+			"limit": 0,
+			"usage": len(result),
+		},
+	})
+
 }
 
 func GetPagination(page, size string) (pageNumber, pageSize int) {
