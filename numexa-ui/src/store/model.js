@@ -132,9 +132,11 @@ export const ListRequests = {
   },
   effects: (dispatch) => ({
     async getProviderRequests(payload, state) {
-      const { projectId, queryparams } = payload; // Destructure "from" and "to" from payload
+      const { projectId, queryparams, currentPage } = payload; // Destructure "from" and "to" from payload
       // Define your query parameters
       const qParam = new URLSearchParams(queryparams);
+      qParam.append("page", currentPage);
+      qParam.append("page_size", 10);
 
       var requestOptions = {
         method: "GET",
