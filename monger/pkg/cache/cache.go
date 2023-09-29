@@ -22,11 +22,12 @@ type Cache struct {
 type GPTCache struct {
 	Prompt string `json:"prompt"`
 	Answer string `json:"answer"`
+	UserID int32  `json:"user_id"`
 }
 
-func New(prompt string, enabled bool) Cache {
+func New(prompt string, userId int32, enabled bool) Cache {
 	if enabled {
-		gptCache, err := fetchFromGPTCache(prompt)
+		gptCache, err := fetchFromGPTCache(prompt, userId)
 		if err != nil {
 			logrus.Errorf("Error fetching from GPT cache: %v", err)
 		}
@@ -95,10 +96,11 @@ func (c *Cache) CacheExists() bool {
 	return c.GPTResponse.Prompt != ""
 }
 
-func fetchFromGPTCache(prompt string) (GPTCache, error) {
+func fetchFromGPTCache(prompt string, userId int32) (GPTCache, error) {
 	// Create a map to represent the request data
 	requestData := map[string]interface{}{
-		"prompt": prompt,
+		"prompt":  prompt,
+		"user_id": userId,
 	}
 
 	// Marshal the request data to JSON

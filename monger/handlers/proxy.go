@@ -23,6 +23,8 @@ import (
 func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 	requestTime := time.Now()
 	originalURL := r.URL.String()
+	userId := int32(0)
+	gptCache := gptcache.Cache{}
 
 	apiKey := r.Header.Get("X-Numexa-Api-Key")
 
@@ -54,13 +56,22 @@ func (h *Handler) OpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gptCache := gptcache.New(prompt, useCache)
+	if useCache {
+		numexaAPIKeyObj, err := h.AuthDB.GetAPIkeyByApiKey(r.Context(), apiKey)
+		if err != nil {
+			logrus.Errorf("Error getting API key: %v", err)
+			return
+		}
+		userId = numexaAPIKeyObj.UserID
 
-	// check if cache is enabled and if there is a cached response
-	if gptCache.Enabled && gptCache.GetCachedAnswer() != "" {
-		h.serveCachedAnswer(w, r, gptCache.GPTResponse)
-		gptCache.IngestCachedRequest(r, requestTime, h.AuthDB, newURL, apiKey, h.ChConfig)
-		return
+		gptCache = gptcache.New(prompt, userId, useCache)
+
+		// check if cache is enabled and if there is a cached response
+		if gptCache.GetCachedAnswer() != "" {
+			h.serveCachedAnswer(w, r, gptCache.GPTResponse)
+			gptCache.IngestCachedRequest(r, requestTime, h.AuthDB, newURL, apiKey, h.ChConfig)
+			return
+		}
 	}
 
 	// Create a new proxy request with the target URL
