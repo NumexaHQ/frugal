@@ -551,3 +551,41 @@ export const UpdatePromptDirectory = {
     },
   }),
 };
+
+export const Usage = {
+  state: {
+    usage: {},
+  },
+  reducers: {
+    setUsage(state, usage) {
+      return { ...state, usage };
+    },
+  },
+  effects: (dispatch) => ({
+    async getUsage(payload, state) {
+      const { projectId } = payload; // Destructure "from" and "to" from payload
+      var requestOptions = {
+        method: "GET",
+        headers: {
+          Authorization: getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+        redirect: "follow",
+      };
+
+      try {
+        // Append the query parameters to the URL
+        const response = await fetch(
+          `${VIBE_BASE_URL}/usage/${projectId}`,
+          requestOptions
+        );
+
+        const data = await response.json();
+
+        dispatch.Usage.setUsage(data.usage);
+      } catch (error) {
+        console.log("Get Usage Error", error);
+      }
+    },
+  }),
+};

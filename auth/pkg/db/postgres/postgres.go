@@ -171,6 +171,28 @@ func (p *Postgres) GetOrganization(ctx context.Context, organizationID int32) (p
 	return organization, nil
 }
 
+func (p *Postgres) GetOrganizationForUser(ctx context.Context, projectID int32) (postgresql_db.Organization, error) {
+	queries := getPostgresQueries(p.db)
+
+	organization, err := queries.GetOrganizationForProject(ctx, projectID)
+	if err != nil {
+		return postgresql_db.Organization{}, err
+	}
+
+	return organization, nil
+}
+
+func (p *Postgres) GetOrganizationForProject(ctx context.Context, userID int32) (postgresql_db.Organization, error) {
+	queries := getPostgresQueries(p.db)
+
+	organization, err := queries.GetOrganizationForUser(ctx, userID)
+	if err != nil {
+		return postgresql_db.Organization{}, err
+	}
+
+	return organization, nil
+}
+
 func (p *Postgres) CreateApiKey(ctx context.Context, apiKeyParam postgresql_db.CreateApiKeyParams) (postgresql_db.NxaApiKey, error) {
 	queries := getPostgresQueries(p.db)
 

@@ -71,13 +71,6 @@ const RequestTables = ({
           />
         </Flex>
       )}
-      <Box
-        mb="20px"
-        fontSize="20px"
-        fontWeight="bold"
-        display="flex"
-        justifyContent="flex-start"
-      ></Box>
 
       <Flex justify="space-between" align="center" mt="15px">
         <Box

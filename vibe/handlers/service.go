@@ -507,6 +507,7 @@ func (h *Handler) GetUsageByProjectID(c *fiber.Ctx) error {
 				"usage": fiber.Map{
 					"limit": v.Limit,
 					"usage": len(result),
+					"plan":  o.Tier,
 				},
 			})
 		}
