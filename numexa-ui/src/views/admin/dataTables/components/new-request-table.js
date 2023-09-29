@@ -24,7 +24,6 @@ import {
   Tooltip,
   Tr,
   useColorModeValue,
-  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import React, { useMemo } from "react";
@@ -74,8 +73,6 @@ function RequestTable(props) {
     const updatedTags = tags.filter((tag) => tag !== tagToRemove);
     setTags(updatedTags);
   };
-
-  const { isOpen, onOpen, onClose } = useDisclosure(); // Initialize useDisclosure
 
   const tableInstance = useTable(
     {
@@ -276,38 +273,6 @@ function RequestTable(props) {
               })}
             </Tbody>
           </Table>
-
-          {/* Pagination controls */}
-          <Flex justify="space-between" align="center" mt="15px">
-            <Text color={textColor} fontSize="14px" fontWeight="700" ml={8}>
-              Page {pageIndex + 1} of {pageOptions.length}
-            </Text>
-            <Flex mr={8}>
-              <Button
-                onClick={() => gotoPage(0)}
-                disabled={!canPreviousPage}
-                mr="10px"
-              >
-                {"<<"}
-              </Button>
-              <Button
-                onClick={previousPage}
-                disabled={!canPreviousPage}
-                mr="10px"
-              >
-                {"<"}
-              </Button>
-              <Button onClick={nextPage} disabled={!canNextPage} mr="10px">
-                {">"}
-              </Button>
-              <Button
-                onClick={() => gotoPage(pageCount - 1)}
-                disabled={!canNextPage}
-              >
-                {">>"}
-              </Button>
-            </Flex>
-          </Flex>
         </>
       )}
       {isDrawerOpen && (
