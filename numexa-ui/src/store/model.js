@@ -11,6 +11,26 @@ if (BASE_URL === "localhost") {
   VIBE_BASE_URL = `${PROTOCOL}//${BASE_URL}:8082`;
 }
 
+const { fetch: originalFetch } = window;
+window.fetch = async (...args) => {
+  let [resource, config] = args;
+  let response = await originalFetch(resource, config);
+  if (!response.ok && response.status === 404) {
+    // 404 error handling
+    return Promise.reject(response);
+  } else if (
+    !response.ok &&
+    (response.status === 401 || response.status === 403)
+  ) {
+    // logout user
+    sessionStorage.removeItem("jwtToken");
+    window.location.href = "/auth";
+
+    return Promise.reject(response);
+  }
+  return response;
+};
+
 export const CommonState = {
   state: {
     projectID: "",

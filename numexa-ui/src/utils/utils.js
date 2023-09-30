@@ -6,7 +6,13 @@ export const isAuthenticated = () => {
   if (token) {
     // Decode the token and check if it's expired
     const decodedToken = decodeToken(token);
-    return decodedToken.exp > Date.now() / 1000;
+    const notExpired = decodedToken.exp > Date.now() / 1000;
+    if (!notExpired) {
+      // delete jwtToken if expired
+      sessionStorage.removeItem("jwtToken");
+      return false;
+    }
+    return notExpired;
   }
   return false;
 };

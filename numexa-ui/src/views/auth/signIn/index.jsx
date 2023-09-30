@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
-import { connect } from 'react-redux';
+import { connect } from "react-redux";
 
 // Chakra imports
 import {
@@ -17,7 +16,7 @@ import {
   InputGroup,
   InputRightElement,
   Text,
-  useColorModeValue
+  useColorModeValue,
 } from "@chakra-ui/react";
 // Custom components
 import { HSeparator } from "components/separator/Separator";
@@ -26,14 +25,13 @@ import DefaultAuth from "layouts/auth/Default";
 import illustration from "assets/img/auth/auth.png";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { RiEyeCloseLine } from "react-icons/ri";
-import Register from 'views/auth/register/index';
+import Register from "views/auth/register/index";
 const SignIn = ({ history, handleSignIn }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [isRegisterview, setIsRegisterview] = useState(false);
- 
 
   const SignIn = async () => {
     setIsLoading(true);
@@ -41,7 +39,7 @@ const SignIn = ({ history, handleSignIn }) => {
     try {
       await handleSignIn({ username, password }); // Assuming handleSignIn handles successful login
       setIsLoading(false);
-      navigate('/admin'); // Navigate to '/admin' route after successful sign-in
+      navigate("/admin"); // Navigate to '/admin' route after successful sign-in
     } catch (error) {
       console.log("Sign In Error", error);
       setIsLoading(false);
@@ -49,11 +47,10 @@ const SignIn = ({ history, handleSignIn }) => {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('jwtToken')) {
-      navigate('/admin');
+    if (sessionStorage.getItem("jwtToken")) {
+      navigate("/admin");
     }
   }, []);
-
 
   const textColor = useColorModeValue("navy.700", "white");
   const textColorSecondary = "gray.400";
@@ -73,61 +70,71 @@ const SignIn = ({ history, handleSignIn }) => {
   const [show, setShow] = React.useState(false);
   const handleClick = () => setShow(!show);
 
-
   if (isRegisterview) {
-    return <Register setIsRegisterview={setIsRegisterview} history={history} />
+    return <Register setIsRegisterview={setIsRegisterview} history={history} />;
   }
   return (
     <DefaultAuth illustrationBackground={illustration} image={illustration}>
       <Flex
         maxW={{ base: "100%", md: "max-content" }}
-        w='100%'
+        w="100%"
         mx={{ base: "auto", lg: "0px" }}
-        me='auto'
-        h='100%'
-        alignItems='start'
-        justifyContent='center'
+        me="auto"
+        h="100%"
+        alignItems="start"
+        justifyContent="center"
         mb={{ base: "30px", md: "60px" }}
         px={{ base: "25px", md: "0px" }}
         mt={{ base: "40px", md: "14vh" }}
-        flexDirection='column'>
-        <Box me='auto'>
-  <Heading color={textColor} fontSize='36px' mb='10px'>
-    Sign In
-  </Heading>
-  <Flex
-    flexDirection='column'
-    justifyContent='center'
-    alignItems='start'
-    maxW='100%'
-    mt='0px'
-    mb='10px'>
-    <Text color={textColorDetails} fontWeight='400' fontSize='14px'>
-      Don't have an account, Sign Up? Click
-      <Text
-        color={textColorBrand}
-        as='span'
-        ms='5px'
-        fontWeight='500'
-        style={{ textDecoration: 'none', transition: 'text-decoration 0.3s ease' }}
-        onMouseEnter={event => event.target.style.textDecoration = 'underline'}
-        onMouseLeave={event => event.target.style.textDecoration = 'none'}
-        onClick={() => setIsRegisterview(true)}>
-        here
-      </Text>
-    </Text>
-  </Flex>
-</Box>
+        flexDirection="column"
+      >
+        <Box me="auto">
+          <Heading color={textColor} fontSize="36px" mb="10px">
+            Sign In
+          </Heading>
+          <Flex
+            flexDirection="column"
+            justifyContent="center"
+            alignItems="start"
+            maxW="100%"
+            mt="0px"
+            mb="10px"
+          >
+            <Text color={textColorDetails} fontWeight="400" fontSize="14px">
+              Don't have an account, Sign Up? Click
+              <Text
+                color={textColorBrand}
+                as="span"
+                ms="5px"
+                fontWeight="500"
+                style={{
+                  textDecoration: "none",
+                  transition: "text-decoration 0.3s ease",
+                }}
+                onMouseEnter={(event) =>
+                  (event.target.style.textDecoration = "underline")
+                }
+                onMouseLeave={(event) =>
+                  (event.target.style.textDecoration = "none")
+                }
+                onClick={() => setIsRegisterview(true)}
+              >
+                here
+              </Text>
+            </Text>
+          </Flex>
+        </Box>
         <Flex
-          zIndex='2'
-          direction='column'
+          zIndex="2"
+          direction="column"
           w={{ base: "100%", md: "420px" }}
-          maxW='100%'
-          background='transparent'
-          borderRadius='15px'
+          maxW="100%"
+          background="transparent"
+          borderRadius="15px"
           mx={{ base: "auto", lg: "unset" }}
-          me='auto'
-          mb={{ base: "20px", md: "auto" }}>
+          me="auto"
+          mb={{ base: "20px", md: "auto" }}
+        >
           {/* <Button
             fontSize='sm'
             me='0px'
@@ -157,46 +164,49 @@ const SignIn = ({ history, handleSignIn }) => {
           </Flex> */}
           <FormControl>
             <FormLabel
-              display='flex'
-              ms='4px'
-              fontSize='sm'
-              fontWeight='500'
+              display="flex"
+              ms="4px"
+              fontSize="sm"
+              fontWeight="500"
               color={textColor}
-              mb='8px'>
+              mb="8px"
+            >
               Email<Text color={brandStars}>*</Text>
             </FormLabel>
             <Input
+              autocomplete="email"
               isRequired={true}
-              variant='auth'
-              fontSize='sm'
+              variant="auth"
+              fontSize="sm"
               ms={{ base: "0px", md: "0px" }}
-              type='email'
-              placeholder='jane@doe.io'
-              mb='24px'
-              fontWeight='500'
-              size='lg'
+              type="email"
+              placeholder="jane@doe.io"
+              mb="24px"
+              fontWeight="500"
+              size="lg"
               onChange={(e) => setUsername(e.target.value)}
             />
             <FormLabel
-              ms='4px'
-              fontSize='sm'
-              fontWeight='500'
+              ms="4px"
+              fontSize="sm"
+              fontWeight="500"
               color={textColor}
-              display='flex'>
+              display="flex"
+            >
               Password<Text color={brandStars}>*</Text>
             </FormLabel>
-            <InputGroup size='md'>
+            <InputGroup size="md">
               <Input
                 isRequired={true}
-                fontSize='sm'
-                placeholder='Min. 8 characters'
-                mb='24px'
-                size='lg'
+                fontSize="sm"
+                placeholder="Min. 8 characters"
+                mb="24px"
+                size="lg"
                 type={show ? "text" : "password"}
-                variant='auth'
+                variant="auth"
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <InputRightElement display='flex' alignItems='center' mt='4px'>
+              <InputRightElement display="flex" alignItems="center" mt="4px">
                 <Icon
                   color={textColorSecondary}
                   _hover={{ cursor: "pointer" }}
@@ -232,14 +242,15 @@ const SignIn = ({ history, handleSignIn }) => {
               </NavLink>
             </Flex> */}
             <Button
-              fontSize='sm'
-              variant='brand'
-              fontWeight='500'
-              w='100%'
-              h='50'
-              mb='24px'
+              fontSize="sm"
+              variant="brand"
+              fontWeight="500"
+              w="100%"
+              h="50"
+              mb="24px"
               onClick={SignIn}
-              isLoading={isLoading}>
+              isLoading={isLoading}
+            >
               Sign In
             </Button>
           </FormControl>
@@ -247,11 +258,9 @@ const SignIn = ({ history, handleSignIn }) => {
       </Flex>
     </DefaultAuth>
   );
-}
+};
 
-const mapState = (state) => ({
-
-});
+const mapState = (state) => ({});
 
 const mapDispatch = (dispatch) => ({
   handleSignIn: dispatch.Login.handleSignIn,
