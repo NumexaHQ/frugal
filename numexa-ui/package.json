@@ -28,6 +28,7 @@
     "babel-register": "^6.26.0",
     "framer-motion": "^4.1.17",
     "google-auth-library": "^9.0.0",
+    "moment": "^2.29.4",
     "react": "17.0.2",
     "react-apexcharts": "1.4.0",
     "react-calendar": "^3.7.0",

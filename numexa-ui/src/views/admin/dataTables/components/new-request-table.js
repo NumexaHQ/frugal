@@ -40,9 +40,9 @@ import { FaPlus } from "react-icons/fa";
 import { useState } from "react";
 
 import Card from "components/card/Card";
-import { formatDateTime } from "utils/utils";
 
 import { connect } from "react-redux";
+import { formatDateTime, humanizeDateTime } from "utils/utils";
 import NoData from "./noData";
 import ResponseDrawer from "./response-drawer";
 
@@ -207,14 +207,15 @@ function RequestTable(props) {
                     >
                       {row.cells.map((cell, index) => {
                         let data = "";
-                        if (cell.column.Header === "CREATED AT") {
+                        if (cell.column.Header === "Initiated At") {
                           data = (
                             <Text
                               color={textColor}
                               fontSize="sm"
                               fontWeight="700"
                             >
-                              {formatDateTime(cell.value)}
+                              {formatDateTime(cell.value)} <br />(
+                              {humanizeDateTime(cell.value)})
                             </Text>
                           );
                         } else {

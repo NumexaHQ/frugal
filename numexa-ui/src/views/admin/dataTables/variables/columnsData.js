@@ -149,6 +149,15 @@ export const requestDataColumn = [
     accessor: "prompt",
   },
   {
+    Header: "Latency",
+    accessor: (row) => {
+      if (row.latency !== 0) {
+        return `${row.latency.toFixed(2)} ms`;
+      }
+      return `${row.latency} ms`;
+    },
+  },
+  {
     Header: "Cost",
     accessor: (row) => {
       if (row.cost !== 0) {
