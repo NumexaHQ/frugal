@@ -1,4 +1,4 @@
-// authUtils.js
+import moment from "moment";
 
 // Function to check if the JWT token exists and is valid
 export const isAuthenticated = () => {
@@ -33,19 +33,13 @@ export function getAuthHeader() {
   return auth;
 }
 
-export function formatDateTime(timestamp) {
-  const dateTime = new Date(timestamp);
-  const options = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    timeZoneName: "short",
-  };
+export function humanizeDateTime(timestamp) {
+  // human-readable date using moment
+  return moment(timestamp).startOf("hour").fromNow();
+}
 
-  return new Intl.DateTimeFormat("en-US", options).format(dateTime);
+export function formatDateTime(timestamp) {
+  return moment(timestamp).format("MMM Do YYYY, h:mm:ss a");
 }
 
 export const generateTimeParams = (timeFilter) => {

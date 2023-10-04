@@ -38,6 +38,10 @@ const RequestTables = ({
 
   const { currentPage, setCurrentPage, pagesCount, pages } = usePagination({
     pagesCount: totalPages,
+    limits: {
+      outer: 2,
+      inner: 2,
+    },
     initialState: { currentPage: 1 },
   });
 
