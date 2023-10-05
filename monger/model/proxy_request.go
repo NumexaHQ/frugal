@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
@@ -43,7 +44,7 @@ func (p *ProxyRequest) SetUserIdentifier(ctx context.Context, authDB nxAuthDB.DB
 	return nil
 }
 
-func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxAuthDB.DB, url, apiKey string) (ProxyRequest, error) {
+func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxAuthDB.DB, url, apiKey string, index int) (ProxyRequest, error) {
 	ctx := r.Context()
 
 	// get requset idfrom context
@@ -92,7 +93,17 @@ func ProxyRequestBuilderForHTTPRequest(r *http.Request, rt time.Time, authDB nxA
 	body := ""
 	if r.Body != nil {
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
+		requestBodyBytes, _ := io.ReadAll(r.Body)
+		requestBody := &utils.RequestBody{}
+		if err := json.Unmarshal(requestBodyBytes, requestBody); err != nil {
+			return ProxyRequest{}, err
+		}
+		newRequestBody := &utils.FinalRequestBody{
+			Model:    requestBody.Config.Options[index].OverrideParams.Model,
+			Messages: requestBody.Params.Messages,
+		}
+		newRequestBodyBytes, _ := json.Marshal(newRequestBody)
+		_, _ = buf.ReadFrom(bytes.NewReader(newRequestBodyBytes))
 		body = buf.String()
 	}
 

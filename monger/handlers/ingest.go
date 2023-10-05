@@ -34,7 +34,7 @@ func (h *Handler) IngestLogs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		pr, err := model.ProxyRequestBuilderForHTTPRequest(embededRequest, time.Now(), h.AuthDB, r.URL.String(), apiKey)
+		pr, err := model.ProxyRequestBuilderForHTTPRequest(embededRequest, time.Now(), h.AuthDB, r.URL.String(), apiKey, 0)
 		if err != nil {
 			logrus.Errorf("Error building proxy request: %v", err)
 		}

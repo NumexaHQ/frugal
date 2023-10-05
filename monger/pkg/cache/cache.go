@@ -71,7 +71,7 @@ func (c *Cache) storeInCache() error {
 	}
 
 	// Create a new request to store data in the cache server
-	cacheURL := commonConstants.GPTCACHE_URL + "/put"
+	cacheURL := commonConstants.GptcacheUrl + "/put"
 	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(cacheJSON))
 	if err != nil {
 		logrus.Errorf("Error creating cache request: %v", err)
@@ -110,7 +110,7 @@ func fetchFromGPTCache(prompt string, userId int32) (GPTCache, error) {
 	}
 
 	// Create a new request to fetch data from the cache server
-	cacheURL := commonConstants.GPTCACHE_URL + "/get"
+	cacheURL := commonConstants.GptcacheUrl + "/get"
 	cacheReq, err := http.NewRequest(http.MethodPost, cacheURL, bytes.NewBuffer(requestJSON))
 	if err != nil {
 		return GPTCache{}, err
@@ -138,8 +138,8 @@ func parseGPTCache(c *http.Response) (GPTCache, error) {
 	return cr, nil
 }
 
-func (c *Cache) IngestCachedRequest(r *http.Request, rt time.Time, authDB nxAuthDB.DB, url, apiKey string, chConfig nxClickhouse.ClickhouseConfig) {
-	pr, err := model.ProxyRequestBuilderForHTTPRequest(r, rt, authDB, url, apiKey)
+func (c *Cache) IngestCachedRequest(r *http.Request, rt time.Time, authDB nxAuthDB.DB, url, apiKey string, chConfig nxClickhouse.ClickhouseConfig, index int) {
+	pr, err := model.ProxyRequestBuilderForHTTPRequest(r, rt, authDB, url, apiKey, index)
 	if err != nil {
 		logrus.Errorf("Error building proxy request: %v", err)
 	}

@@ -17,6 +17,7 @@ func Setup(r *mux.Router, chConfig nxClickhouse.ClickhouseConfig, authdb nxAuthD
 	r.Use(Middleware)
 
 	r.HandleFunc("/v1/openai/{rest:.*}", nxHandler.OpenAIProxy)
+	r.HandleFunc("/v1/openapi/{rest:.*}", nxHandler.OpenAIDirect)
 
 	// rest endpoint to ingest logs
 	r.HandleFunc("/v1/logs", nxHandler.IngestLogs).Methods("POST")
