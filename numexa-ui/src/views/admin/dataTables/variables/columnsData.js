@@ -162,6 +162,13 @@ export const requestDataColumn = [
     Header: "Provider",
     accessor: "provider",
   },
+  {
+    Header: "Latency",
+    accessor: (row) => {
+      return <p>{row.latency} ms</p>;
+    }
+  },
+
 ];
 
 export const apiKeycolumn = [

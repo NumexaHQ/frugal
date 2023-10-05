@@ -135,8 +135,8 @@ export const ListRequests = {
       const { projectId, queryparams, currentPage } = payload; // Destructure "from" and "to" from payload
       // Define your query parameters
       const qParam = new URLSearchParams(queryparams);
-      qParam.append("page", currentPage);
-      qParam.append("page_size", 10);
+      qParam.append("page", currentPage===undefined ? 0 : currentPage);
+      qParam.append("page_size", String(10));
 
       var requestOptions = {
         method: "GET",

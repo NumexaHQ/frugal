@@ -1,31 +1,27 @@
 # stage1 as builder
 FROM node:lts as builder
 
-# copy the package.json to install dependencies
-COPY package.json package-lock.json ./
-
-# Install the dependencies and make the folder
-RUN yarn install && mkdir /react-ui && mv ./node_modules ./react-ui
-
+# Set working directory
 WORKDIR /react-ui
-
+# Copy all files from current directory to working dir in image
 COPY . .
-
-# Build the project and copy the files
-RUN yarn run build
+# install node modules and build assets
+RUN yarn install && yarn build
 
 
 FROM nginx:alpine
 
 #!/bin/sh
 
-COPY ./.nginx/nginx.conf /etc/nginx/nginx.conf
+# Set working directory to nginx asset directory
+WORKDIR /usr/share/nginx/html
 
 ## Remove default nginx index page
-RUN rm -rf /usr/share/nginx/html/*
+RUN rm -rf ./*
 
 # Copy from the stage 1
-COPY --from=builder /react-ui/build /usr/share/nginx/html
+COPY .nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /react-ui/build .
 
 EXPOSE 3000 80
 
