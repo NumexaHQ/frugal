@@ -1,12 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
+	"github.com/NumexaHQ/monger/model"
 	"io/ioutil"
 	"net/http"
-	"time"
-
-	"github.com/NumexaHQ/monger/model"
 
 	"github.com/sirupsen/logrus"
 )
@@ -26,15 +23,13 @@ func (h *Handler) IngestLogs(w http.ResponseWriter, r *http.Request) {
 	// if request, build proxy request
 	// if response, build proxy response
 	if r.Header.Get("X-Numexa-Log-Type") == "request" {
-		var embededRequest *http.Request
-		err = json.Unmarshal(body, &embededRequest)
+		err, newReq, requestTime := model.CreateNewRequest(err, body, r)
 		if err != nil {
-			logrus.Errorf("Error unmarshalling body: %v", err)
-			http.Error(w, "Error unmarshalling body", http.StatusBadRequest)
+			logrus.Errorf("Error creating New Request: %v", err)
+			http.Error(w, "Error creating New Request", http.StatusInternalServerError)
 			return
 		}
-
-		pr, err := model.ProxyRequestBuilderForHTTPRequest(embededRequest, time.Now(), h.AuthDB, r.URL.String(), apiKey)
+		pr, err := model.ProxyRequestBuilderForHTTPRequest(newReq, requestTime, h.AuthDB, newReq.URL.String(), apiKey)
 		if err != nil {
 			logrus.Errorf("Error building proxy request: %v", err)
 		}
@@ -44,15 +39,13 @@ func (h *Handler) IngestLogs(w http.ResponseWriter, r *http.Request) {
 		}()
 		return
 	} else if r.Header.Get("X-Numexa-Log-Type") == "response" {
-		var embededResponse *http.Response
-		err = json.Unmarshal(body, &embededResponse)
+		err, newResponse, initiatedTime, responseTime := model.CreateNewResponse(r, body)
 		if err != nil {
-			logrus.Errorf("Error unmarshalling body: %v", err)
-			http.Error(w, "Error unmarshalling body", http.StatusBadRequest)
+			logrus.Errorf("Error building New Response: %v", err)
+			http.Error(w, "Error building New Response", http.StatusInternalServerError)
 			return
 		}
-
-		pr, err := model.ProxyResponseBuilderForHTTPResponse(r.Context(), embededResponse, h.AuthDB, time.Now(), 0, time.Now(), apiKey)
+		pr, err := model.ProxyResponseBuilderForHTTPResponse(r.Context(), newResponse, h.AuthDB, initiatedTime, 0, responseTime, apiKey)
 		if err != nil {
 			logrus.Errorf("Error building proxy response: %v", err)
 		}
